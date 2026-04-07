@@ -1,0 +1,1 @@
+# TODO: Add Blur Effect to Active Navbar Links in Navbar.jsx\n\n- [ ] Step 1: Update Navbar.jsx import to NavLink and replace Links with dynamic active class\n- [ ] Step 2: Add .nav-link.active blur styles in Navbar.css\n- [ ] Step 3: Test

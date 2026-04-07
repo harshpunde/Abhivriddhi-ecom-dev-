@@ -37,7 +37,7 @@
 }
 
 /* ─── Navbar ──────────────────────────────────────────────── */
-.navbar {
+/* .navbar {
   background: #fff;
   border-bottom: 1px solid #e8e8e8;
   position: sticky;
@@ -104,6 +104,13 @@
   color: #2d6a2d;
 }
 
+.nav-link-active {
+  background: rgba(45, 106, 45, 0.15) !important;
+  backdrop-filter: blur(12px);
+  color: #2d6a2d !important;
+  box-shadow: 0 4px 12px rgba(45, 106, 45, 0.2);
+}
+
 .cart-btn {
   position: relative;
   background: none;
@@ -137,6 +144,72 @@
   align-items: center;
   justify-content: center;
   border: 2px solid #fff;
+} */
+
+
+/* ─── Navbar (MATCH IMAGE EXACTLY) ───────────────────── */
+.navbar {
+  position: absolute;   /* ✅ over hero image */
+  top: 40px;            /* below announcement bar */
+  left: 0;
+  width: 100%;
+  z-index: 100;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+.navbar-inner {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 14px 24px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  /* ✅ GLASS EFFECT */
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+
+  border-radius: 10px;
+}
+
+/* Logo */
+.logo-hindi {
+  font-size: 20px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.logo-en {
+  font-size: 14px;
+  color: #ffffff;
+}
+
+/* Links */
+.nav-link {
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 500;
+  padding: 6px 12px;
+  text-decoration: none;
+  transition: opacity 0.2s;
+}
+
+.nav-link:hover {
+  opacity: 0.7;
+}
+
+/* Cart */
+.cart-btn {
+  color: #ffffff;
+}
+
+.cart-btn:hover {
+  opacity: 0.7;
+  background: transparent;
 }
 
 /* ─── Hamburger ───────────────────────────────────────────── */

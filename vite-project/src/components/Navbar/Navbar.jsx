@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, NavLink } from 'react-router-dom';
 import './Navbar.css';
 
 // ─── Announcement Bar ─────────────────────────────────────────
@@ -125,8 +125,8 @@ export default function Navbar({ cartCount = 0, onCartClick, cartItems = [], onC
           </button>
 
           <div className={`navbar-links ${mobileOpen ? 'open' : ''}`}>
-            <Link to="/" className="nav-link">Products</Link>
-            <a href="#" className="nav-link">Makings</a>
+            <NavLink to="/" className={({ isActive }) => `nav-link ${isActive ? 'nav-link-active' : ''}`}>Products</NavLink>
+            <NavLink to="/makings" className={({ isActive }) => `nav-link ${isActive ? 'nav-link-active' : ''}`}>Makings</NavLink>
             <button className="cart-btn" onClick={handleCartOpen} aria-label="Open cart">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <circle cx="9" cy="21" r="1" /><circle cx="20" cy="21" r="1" />

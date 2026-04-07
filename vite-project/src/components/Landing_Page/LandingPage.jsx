@@ -1,4 +1,4 @@
-import Navbar from "./navbar.jsx"
+import Navbar from "../Navbar/Navbar.jsx"
 import { HeroSection } from "./hero-section.jsx"
 import { FeaturesSection } from "./features-section.jsx"
 import { PillarsSection } from "./pillars-section.jsx"
