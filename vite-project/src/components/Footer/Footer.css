@@ -43,7 +43,7 @@
 .footer-address {
   font-size: 12px;
   line-height: 1.8;
-  color: #aaa;
+  color: #FFFFFF;
   margin-bottom: 20px;
 }
 
@@ -58,9 +58,9 @@
   justify-content: center;
   width: 38px;
   height: 38px;
-  border: 1px solid #3d3d3d;
+  border:  2px solid #ffffff;
   border-radius: 8px;
-  color: #aaa;
+  color: #FFFFFF;
   text-decoration: none;
   transition: border-color 0.2s, color 0.2s, background 0.2s;
 }
@@ -68,7 +68,7 @@
 .social-link:hover {
   border-color: #8bcf8b;
   color: #8bcf8b;
-  background: rgba(139, 207, 139, 0.08);
+  background: #FFFFFF;
 }
 
 .footer-links-group {
@@ -96,7 +96,7 @@
 .footer-links a {
   text-decoration: none;
   font-size: 13px;
-  color: #aaa;
+  color: #ffffff;
   transition: color 0.2s;
 }
 
@@ -104,7 +104,7 @@
 
 .footer-bottom {
   padding: 18px 40px;
-  border-top: 1px solid #2d2d2d;
+  border-top: 1px solid #ffffff;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -121,7 +121,7 @@
 .footer-bottom-links a {
   text-decoration: none;
   font-size: 11px;
-  color: #777;
+  color: #ffffff;
   transition: color 0.2s;
 }
 
@@ -129,7 +129,7 @@
 
 .footer-copy {
   font-size: 11px;
-  color: #666;
+  color: #ffffff;
 }
 
 /* ─── Responsive ──────────────────────────────────────────── */
