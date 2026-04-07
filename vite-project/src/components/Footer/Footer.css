@@ -1,0 +1,151 @@
+/* ─── Footer ──────────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap');
+
+.footer {
+  background: #2C7700;
+  color: #ccc;
+  margin-top: auto;
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+.footer-inner {
+  padding: 48px 40px 32px;
+  display: flex;
+  gap: 64px;
+  flex-wrap: wrap;
+}
+
+.footer-brand {
+  max-width: 280px;
+  flex: 1;
+}
+
+.footer-logo {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 14px;
+}
+
+.footer-logo-hindi {
+  font-size: 20px;
+  font-weight: 900;
+  color: #fff;
+  letter-spacing: 2px;
+}
+
+.footer-logo-en {
+  font-size: 13px;
+  font-weight: 500;
+  color: #8bcf8b;
+  letter-spacing: 3px;
+}
+
+.footer-address {
+  font-size: 12px;
+  line-height: 1.8;
+  color: #aaa;
+  margin-bottom: 20px;
+}
+
+.footer-socials {
+  display: flex;
+  gap: 12px;
+}
+
+.social-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border: 1px solid #3d3d3d;
+  border-radius: 8px;
+  color: #aaa;
+  text-decoration: none;
+  transition: border-color 0.2s, color 0.2s, background 0.2s;
+}
+
+.social-link:hover {
+  border-color: #8bcf8b;
+  color: #8bcf8b;
+  background: rgba(139, 207, 139, 0.08);
+}
+
+.footer-links-group {
+  flex: 1;
+}
+
+.footer-links-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 16px;
+}
+
+.footer-links {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 0;
+  margin: 0;
+}
+
+.footer-links a {
+  text-decoration: none;
+  font-size: 13px;
+  color: #aaa;
+  transition: color 0.2s;
+}
+
+.footer-links a:hover { color: #8bcf8b; }
+
+.footer-bottom {
+  padding: 18px 40px;
+  border-top: 1px solid #2d2d2d;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.footer-bottom-links {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.footer-bottom-links a {
+  text-decoration: none;
+  font-size: 11px;
+  color: #777;
+  transition: color 0.2s;
+}
+
+.footer-bottom-links a:hover { color: #aaa; }
+
+.footer-copy {
+  font-size: 11px;
+  color: #666;
+}
+
+/* ─── Responsive ──────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .footer-inner {
+    gap: 32px;
+    padding: 36px 20px 24px;
+  }
+
+  .footer-bottom {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 16px 20px;
+  }
+
+  .footer-bottom-links {
+    gap: 12px;
+  }
+}
