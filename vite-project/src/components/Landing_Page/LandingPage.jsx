@@ -3,7 +3,7 @@ import { HeroSection } from "./hero-section.jsx"
 import { FeaturesSection } from "./features-section.jsx"
 import { PillarsSection } from "./pillars-section.jsx"
 import { ProductsSection } from "./products-section.jsx"
-import { Footer } from "./footer.jsx"
+import Footer from '../Footer/Footer';
 
 export function LandingPage() {
   return (
