@@ -29,7 +29,7 @@ export default function LoginPage() {
 
     try {
       await sendOTP({
-        identifier,
+        identifier: identifier.trim(),
         type: authType,
         purpose: 'login'
       });

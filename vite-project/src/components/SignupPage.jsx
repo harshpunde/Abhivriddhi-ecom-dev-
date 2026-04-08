@@ -37,9 +37,9 @@ export default function SignupPage() {
 
     try {
       await registerUser({
-        name,
-        email,
-        mobile,
+        name: name.trim(),
+        email: email.trim(),
+        mobile: mobile.trim(),
         password
       });
       setStep('verify');
