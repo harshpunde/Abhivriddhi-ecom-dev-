@@ -111,6 +111,10 @@ export default function ProductDetail() {
         items={cartItems}
         onUpdate={updateQty}
         onRemove={removeFromCart}
+        onCheckout={() => {
+          setCartOpen(false);
+          navigate('/checkout');
+        }}
       />
 
       <main className="pd-main">

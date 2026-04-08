@@ -6,37 +6,48 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const [identifier, setIdentifier] = useState('');
   const [otp, setOtp] = useState('');
-  const [step, setStep] = useState('login');
-  const [message, setMessage] = useState('');
+  const [step, setStep] = useState('login'); // 'login' | 'otp'
+  const [loginMode, setLoginMode] = useState('password'); // 'password' | 'otp'
+  const [message, setMessage] = useState({ text: '', type: 'info' }); // type: 'info'|'success'|'error'
   const [loading, setLoading] = useState(false);
   const [password, setPassword] = useState('');
 
   const isEmail = identifier.includes('@');
   const authType = isEmail ? 'email' : 'mobile';
 
+  const setError = (text) => setMessage({ text, type: 'error' });
+  const setSuccess = (text) => setMessage({ text, type: 'success' });
+  const setInfo = (text) => setMessage({ text, type: 'info' });
+
+  const validateIdentifier = () => {
+    if (!identifier.trim()) {
+      setError('Please enter your email or mobile number.');
+      return false;
+    }
+    if (!isEmail && !/^\+91[6-9]\d{9}$/.test(identifier.trim())) {
+      setError('For mobile, use +91 format (e.g. +919876543210).');
+      return false;
+    }
+    return true;
+  };
+
   const handleSendOTP = async (event) => {
     event.preventDefault();
-
-    if (!identifier.trim()) {
-      return setMessage('Please enter your Email or Mobile number.');
-    }
-    if (!isEmail && !/^\+91[6-9]\d{9}$/.test(identifier)) {
-      return setMessage('For mobile, please use +91 format (e.g. +919876543210).');
-    }
+    if (!validateIdentifier()) return;
 
     setLoading(true);
-    setMessage('');
+    setMessage({ text: '', type: 'info' });
 
     try {
       await sendOTP({
         identifier: identifier.trim(),
         type: authType,
-        purpose: 'login'
+        purpose: 'login',
       });
       setStep('otp');
-      setMessage(`OTP sent to your ${authType}. Please check your messages.`);
+      setSuccess(`OTP sent to your ${authType}. Please check and enter it below.`);
     } catch (error) {
-      setMessage(error.message);
+      setError(error.message || 'Failed to send OTP. Please try again.');
     }
 
     setLoading(false);
@@ -44,22 +55,29 @@ export default function LoginPage() {
 
   const handleVerifyOTP = async (event) => {
     event.preventDefault();
+    if (!otp.trim() || otp.trim().length !== 6) {
+      setError('Please enter the 6-digit OTP.');
+      return;
+    }
     setLoading(true);
-    setMessage('');
+    setMessage({ text: '', type: 'info' });
 
     try {
       const response = await verifyOTP({
         identifier: identifier.trim(),
         otp: otp.trim(),
         type: authType,
-        purpose: 'login'
+        purpose: 'login',
       });
 
       localStorage.setItem('token', response.token);
-      setMessage('Login successful! Redirecting...');
-      navigate('/');
+      if (response.user) {
+        localStorage.setItem('user', JSON.stringify(response.user));
+      }
+      setSuccess('Login successful! Redirecting...');
+      setTimeout(() => navigate('/'), 1000);
     } catch (error) {
-      setMessage(error.message);
+      setError(error.message || 'OTP verification failed. Please try again.');
     }
 
     setLoading(false);
@@ -67,118 +85,224 @@ export default function LoginPage() {
 
   const handlePasswordLogin = async (event) => {
     event.preventDefault();
-
-    if (!identifier.trim()) {
-      return setMessage('Please enter your Email or Mobile number.');
-    }
+    if (!validateIdentifier()) return;
     if (!password.trim()) {
-      return setMessage('Please enter your password.');
+      setError('Please enter your password.');
+      return;
     }
 
     setLoading(true);
-    setMessage('');
+    setMessage({ text: '', type: 'info' });
 
     try {
       const response = await loginWithPassword({
         identifier: identifier.trim(),
-        password: password.trim()
+        password: password,
       });
       localStorage.setItem('token', response.token);
-      setMessage('Login successful! Redirecting...');
-      navigate('/');
+      if (response.user) {
+        localStorage.setItem('user', JSON.stringify(response.user));
+      }
+      setSuccess('Login successful! Redirecting...');
+      setTimeout(() => navigate('/'), 1000);
     } catch (error) {
-      setMessage(error.message);
+      setError(error.message || 'Login failed. Please check your credentials.');
     }
 
     setLoading(false);
   };
 
+  const handleBackToLogin = () => {
+    setStep('login');
+    setOtp('');
+    setMessage({ text: '', type: 'info' });
+  };
+
+  const msgColor =
+    message.type === 'error'
+      ? 'bg-red-50 border border-red-200 text-red-700'
+      : message.type === 'success'
+      ? 'bg-green-50 border border-green-200 text-green-700'
+      : 'bg-slate-100 text-slate-700';
+
   return (
-    <div className="min-h-screen bg-slate-50 py-16">
-      <div className="mx-auto w-full max-w-md rounded-3xl bg-white p-10 shadow-xl shadow-slate-200">
-        <h1 className="mb-4 text-3xl font-bold text-slate-900">Login</h1>
-        <p className="mb-8 text-sm text-slate-600">
-          Access your account with email or mobile OTP.
-        </p>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-green-50 flex items-center justify-center py-16 px-4">
+      <div className="w-full max-w-md rounded-3xl bg-white p-10 shadow-xl shadow-slate-200">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="w-12 h-12 bg-[#4a7c23] rounded-2xl flex items-center justify-center mb-4">
+            <span className="text-2xl">🫘</span>
+          </div>
+          <h1 className="text-3xl font-bold text-slate-900">
+            {step === 'otp' ? 'Enter OTP' : 'Welcome Back'}
+          </h1>
+          <p className="mt-2 text-sm text-slate-500">
+            {step === 'otp'
+              ? `We sent a 6-digit OTP to your ${authType}`
+              : 'Sign in to your Abhivriddhi Organics account'}
+          </p>
+        </div>
+
+        {/* Login Mode Toggle (only on first step) */}
+        {step === 'login' && (
+          <div className="flex rounded-2xl border border-slate-200 p-1 mb-6 bg-slate-50">
+            <button
+              type="button"
+              onClick={() => { setLoginMode('password'); setMessage({ text: '', type: 'info' }); }}
+              className={`flex-1 rounded-xl py-2 text-sm font-semibold transition ${
+                loginMode === 'password'
+                  ? 'bg-white shadow text-[#4a7c23]'
+                  : 'text-slate-500 hover:text-slate-700'
+              }`}
+            >
+              Password
+            </button>
+            <button
+              type="button"
+              onClick={() => { setLoginMode('otp'); setMessage({ text: '', type: 'info' }); }}
+              className={`flex-1 rounded-xl py-2 text-sm font-semibold transition ${
+                loginMode === 'otp'
+                  ? 'bg-white shadow text-[#4a7c23]'
+                  : 'text-slate-500 hover:text-slate-700'
+              }`}
+            >
+              OTP Login
+            </button>
+          </div>
+        )}
 
         <form className="space-y-5">
-          <label className="block text-sm font-medium text-slate-700">
-            Email or Mobile
-            <input
-              value={identifier}
-              onChange={(e) => setIdentifier(e.target.value)}
-              type="text"
-              className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none transition focus:border-[#4a7c23]"
-              placeholder="you@example.com or +919876543210"
-            />
-          </label>
+          {/* Identifier always shown */}
+          {step === 'login' && (
+            <label className="block text-sm font-medium text-slate-700">
+              Email or Mobile Number
+              <input
+                value={identifier}
+                onChange={(e) => setIdentifier(e.target.value)}
+                type="text"
+                autoComplete="username"
+                className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none transition focus:border-[#4a7c23] focus:ring-2 focus:ring-[#4a7c23]/10"
+                placeholder="you@example.com or +919876543210"
+              />
+            </label>
+          )}
 
-          {step === 'login' ? (
+          {/* Password mode */}
+          {step === 'login' && loginMode === 'password' && (
             <>
               <label className="block text-sm font-medium text-slate-700">
-                Password (optional)
+                Password
                 <input
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   type="password"
-                  className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none transition focus:border-[#4a7c23]"
+                  autoComplete="current-password"
+                  className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none transition focus:border-[#4a7c23] focus:ring-2 focus:ring-[#4a7c23]/10"
                   placeholder="••••••••"
                 />
               </label>
-
               <button
                 onClick={handlePasswordLogin}
-                className="w-full rounded-2xl bg-[#4a7c23] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#3d6a1c]"
-                disabled={loading || !identifier}
+                type="button"
+                className="w-full rounded-2xl bg-[#4a7c23] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#3d6a1c] disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={loading || !identifier || !password}
               >
-                {loading ? 'Logging in...' : 'Login with Password'}
-              </button>
-
-              <button
-                onClick={handleSendOTP}
-                className="w-full rounded-2xl border border-[#4a7c23] bg-white px-4 py-3 text-sm font-semibold text-[#4a7c23] transition hover:bg-slate-50"
-                disabled={loading || !identifier}
-              >
-                {loading ? 'Sending OTP...' : 'Login with OTP'}
+                {loading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Signing in...
+                  </span>
+                ) : (
+                  'Sign In'
+                )}
               </button>
             </>
-          ) : (
+          )}
+
+          {/* OTP send mode */}
+          {step === 'login' && loginMode === 'otp' && (
+            <button
+              onClick={handleSendOTP}
+              type="button"
+              className="w-full rounded-2xl bg-[#4a7c23] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#3d6a1c] disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={loading || !identifier}
+            >
+              {loading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  Sending OTP...
+                </span>
+              ) : (
+                'Send OTP'
+              )}
+            </button>
+          )}
+
+          {/* OTP entry step */}
+          {step === 'otp' && (
             <>
+              <div className="bg-slate-50 rounded-2xl px-4 py-3 text-sm text-slate-600 border border-slate-200">
+                Sending OTP to: <span className="font-semibold text-slate-800">{identifier}</span>
+              </div>
+
               <label className="block text-sm font-medium text-slate-700">
-                Enter OTP
+                Enter 6-digit OTP
                 <input
                   value={otp}
-                  onChange={(e) => setOtp(e.target.value)}
+                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
                   type="text"
-                  className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none transition focus:border-[#4a7c23]"
-                  placeholder="123456"
+                  inputMode="numeric"
+                  maxLength={6}
+                  autoFocus
+                  className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none transition focus:border-[#4a7c23] focus:ring-2 focus:ring-[#4a7c23]/10 tracking-widest text-center text-lg font-bold"
+                  placeholder="• • • • • •"
                 />
               </label>
 
               <button
                 onClick={handleVerifyOTP}
-                className="w-full rounded-2xl bg-[#4a7c23] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#3d6a1c]"
-                disabled={loading || !otp}
+                type="button"
+                className="w-full rounded-2xl bg-[#4a7c23] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#3d6a1c] disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={loading || otp.length !== 6}
               >
-                {loading ? 'Verifying...' : 'Verify OTP'}
+                {loading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Verifying...
+                  </span>
+                ) : (
+                  'Verify & Login'
+                )}
               </button>
 
               <button
                 type="button"
-                onClick={() => setStep('login')}
-                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                onClick={handleBackToLogin}
+                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
               >
-                Back to Login
+                ← Back
+              </button>
+
+              <button
+                type="button"
+                onClick={handleSendOTP}
+                disabled={loading}
+                className="w-full text-sm text-[#4a7c23] hover:underline disabled:opacity-50"
+              >
+                Resend OTP
               </button>
             </>
           )}
         </form>
 
-        {message ? (
-          <p className="mt-4 rounded-2xl bg-slate-100 px-4 py-3 text-sm text-slate-700">{message}</p>
-        ) : null}
+        {/* Message */}
+        {message.text && (
+          <div className={`mt-5 rounded-2xl px-4 py-3 text-sm ${msgColor}`}>
+            {message.text}
+          </div>
+        )}
 
-        <p className="mt-6 text-center text-sm text-slate-600">
+        <p className="mt-6 text-center text-sm text-slate-500">
           Don&apos;t have an account?{' '}
           <Link to="/signup" className="font-semibold text-[#4a7c23] hover:text-[#3d6a1c]">
             Sign up

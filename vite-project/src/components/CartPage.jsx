@@ -109,9 +109,12 @@ export default function CartPage() {
                 <span>Total</span>
                 <span>₹{totalPrice}/-</span>
               </div>
-              <button className="mt-6 w-full rounded-full bg-[#4a7c23] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#3d6a1c]">
+              <Link
+                to="/checkout"
+                className="mt-6 flex w-full justify-center rounded-full bg-[#4a7c23] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#3d6a1c]"
+              >
                 Proceed to Checkout
-              </button>
+              </Link>
             </aside>
           </div>
         )}

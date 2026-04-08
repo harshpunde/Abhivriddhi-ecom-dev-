@@ -9,43 +9,43 @@ export default function SignupPage() {
   const [mobile, setMobile] = useState('');
   const [password, setPassword] = useState('');
   const [otp, setOtp] = useState('');
-  const [step, setStep] = useState('register');
-  const [message, setMessage] = useState('');
+  const [step, setStep] = useState('register'); // 'register' | 'verify'
+  const [message, setMessage] = useState({ text: '', type: 'info' });
   const [loading, setLoading] = useState(false);
-  const [verifyType, setVerifyType] = useState('email');
+  const [verifyType, setVerifyType] = useState('email'); // 'email' | 'mobile'
+  const [showPassword, setShowPassword] = useState(false);
+
+  const setError = (text) => setMessage({ text, type: 'error' });
+  const setSuccess = (text) => setMessage({ text, type: 'success' });
+  const setInfo = (text) => setMessage({ text, type: 'info' });
 
   const handleRegister = async (event) => {
     event.preventDefault();
-    
-    // Client-side validation to match backend rules
-    if (name.trim().length < 2) {
-      return setMessage('Name must be at least 2 characters long.');
+
+    // Client-side validation
+    if (name.trim().length < 2) return setError('Name must be at least 2 characters.');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) return setError('Please enter a valid email address.');
+    if (!/^\+91[6-9]\d{9}$/.test(mobile.trim())) {
+      return setError('Please enter a valid Indian mobile number (e.g. +919876543210).');
     }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      return setMessage('Please provide a valid email address.');
-    }
-    const mobileRegex = /^\+91[6-9]\d{9}$/;
-    if (!mobileRegex.test(mobile)) {
-      return setMessage('Please provide a valid Indian mobile number starting with +91 (e.g. +919876543210).');
-    }
-    if (password.length < 6) {
-      return setMessage('Password must be at least 6 characters long.');
-    }
+    if (password.length < 6) return setError('Password must be at least 6 characters.');
 
     setLoading(true);
-    setMessage('');
+    setMessage({ text: '', type: 'info' });
 
     try {
       await registerUser({
         name: name.trim(),
         email: email.trim(),
         mobile: mobile.trim(),
-        password
+        password,
       });
       setStep('verify');
-      setMessage('Registration successful. OTP was sent to email and mobile. Verify one now.');
+      setSuccess(
+        'Account created! OTP has been sent to your email and mobile. Enter the OTP to verify your account.'
+      );
     } catch (error) {
-      setMessage(error.message);
+      setError(error.message || 'Registration failed. Please try again.');
     }
 
     setLoading(false);
@@ -53,36 +53,62 @@ export default function SignupPage() {
 
   const handleVerify = async (event) => {
     event.preventDefault();
+    if (!otp.trim() || otp.trim().length !== 6) {
+      return setError('Please enter the 6-digit OTP.');
+    }
+
     setLoading(true);
-    setMessage('');
+    setMessage({ text: '', type: 'info' });
 
     try {
       const response = await verifyOTP({
         identifier: (verifyType === 'email' ? email : mobile).trim(),
         otp: otp.trim(),
         type: verifyType,
-        purpose: 'registration'
+        purpose: 'registration',
       });
 
       localStorage.setItem('token', response.token);
-      setMessage('Verification successful! Redirecting to home...');
-      navigate('/');
+      if (response.user) {
+        localStorage.setItem('user', JSON.stringify(response.user));
+      }
+      setSuccess('Account verified! Welcome to Abhivriddhi Organics 🎉');
+      setTimeout(() => navigate('/'), 1200);
     } catch (error) {
-      setMessage(error.message);
+      setError(error.message || 'Verification failed. Please try again.');
     }
 
     setLoading(false);
   };
 
-  return (
-    <div className="min-h-screen bg-slate-50 py-16">
-      <div className="mx-auto w-full max-w-md rounded-3xl bg-white p-10 shadow-xl shadow-slate-200">
-        <h1 className="mb-4 text-3xl font-bold text-slate-900">Sign Up</h1>
-        <p className="mb-8 text-sm text-slate-600">
-          Create your account with email, mobile, and OTP verification.
-        </p>
+  const msgColor =
+    message.type === 'error'
+      ? 'bg-red-50 border border-red-200 text-red-700'
+      : message.type === 'success'
+      ? 'bg-green-50 border border-green-200 text-green-700'
+      : 'bg-blue-50 border border-blue-200 text-blue-700';
 
-        {step === 'register' ? (
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-green-50 flex items-center justify-center py-16 px-4">
+      <div className="w-full max-w-md rounded-3xl bg-white p-10 shadow-xl shadow-slate-200">
+
+        {/* Header */}
+        <div className="mb-8">
+          <div className="w-12 h-12 bg-[#4a7c23] rounded-2xl flex items-center justify-center mb-4">
+            <span className="text-2xl">🌱</span>
+          </div>
+          <h1 className="text-3xl font-bold text-slate-900">
+            {step === 'register' ? 'Create Account' : 'Verify Account'}
+          </h1>
+          <p className="mt-2 text-sm text-slate-500">
+            {step === 'register'
+              ? 'Join Abhivriddhi Organics for fresh, pure products'
+              : `OTP sent to your ${verifyType}. Please enter it below.`}
+          </p>
+        </div>
+
+        {/* Registration Form */}
+        {step === 'register' && (
           <form className="space-y-5" onSubmit={handleRegister}>
             <label className="block text-sm font-medium text-slate-700">
               Full Name
@@ -90,96 +116,159 @@ export default function SignupPage() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 type="text"
-                className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none transition focus:border-[#4a7c23]"
-                placeholder="Your name"
+                autoComplete="name"
+                className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none transition focus:border-[#4a7c23] focus:ring-2 focus:ring-[#4a7c23]/10"
+                placeholder="Your full name"
               />
             </label>
+
             <label className="block text-sm font-medium text-slate-700">
-              Email
+              Email Address
               <input
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 type="email"
-                className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none transition focus:border-[#4a7c23]"
+                autoComplete="email"
+                className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none transition focus:border-[#4a7c23] focus:ring-2 focus:ring-[#4a7c23]/10"
                 placeholder="you@example.com"
               />
             </label>
+
             <label className="block text-sm font-medium text-slate-700">
-              Mobile (+91)
+              Mobile Number <span className="font-normal text-slate-400">(+91 format)</span>
               <input
                 value={mobile}
                 onChange={(e) => setMobile(e.target.value)}
                 type="tel"
-                className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none transition focus:border-[#4a7c23]"
+                autoComplete="tel"
+                className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none transition focus:border-[#4a7c23] focus:ring-2 focus:ring-[#4a7c23]/10"
                 placeholder="+919876543210"
               />
             </label>
+
             <label className="block text-sm font-medium text-slate-700">
               Password
-              <input
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                type="password"
-                className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none transition focus:border-[#4a7c23]"
-                placeholder="••••••••"
-              />
+              <div className="relative mt-2">
+                <input
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  type={showPassword ? 'text' : 'password'}
+                  autoComplete="new-password"
+                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 pr-12 text-sm outline-none transition focus:border-[#4a7c23] focus:ring-2 focus:ring-[#4a7c23]/10"
+                  placeholder="Min. 6 characters"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs"
+                >
+                  {showPassword ? 'Hide' : 'Show'}
+                </button>
+              </div>
             </label>
+
             <button
               type="submit"
-              className="w-full rounded-2xl bg-[#4a7c23] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#3d6a1c]"
+              className="w-full rounded-2xl bg-[#4a7c23] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#3d6a1c] disabled:opacity-50 disabled:cursor-not-allowed"
               disabled={loading || !name || !email || !mobile || !password}
             >
-              {loading ? 'Registering...' : 'Sign up'}
-            </button>
-          </form>
-        ) : (
-          <form className="space-y-5" onSubmit={handleVerify}>
-            <label className="block text-sm font-medium text-slate-700">
-              Verify Type
-              <select
-                value={verifyType}
-                onChange={(e) => setVerifyType(e.target.value)}
-                className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none transition focus:border-[#4a7c23]"
-              >
-                <option value="email">Email</option>
-                <option value="mobile">Mobile</option>
-              </select>
-            </label>
-            <label className="block text-sm font-medium text-slate-700">
-              Enter OTP
-              <input
-                value={otp}
-                onChange={(e) => setOtp(e.target.value)}
-                type="text"
-                className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none transition focus:border-[#4a7c23]"
-                placeholder="123456"
-              />
-            </label>
-            <button
-              type="submit"
-              className="w-full rounded-2xl bg-[#4a7c23] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#3d6a1c]"
-              disabled={loading || !otp}
-            >
-              {loading ? 'Verifying...' : 'Verify OTP'}
-            </button>
-            <button
-              type="button"
-              onClick={() => setStep('register')}
-              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
-            >
-              Back to registration
+              {loading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  Creating Account...
+                </span>
+              ) : (
+                'Create Account'
+              )}
             </button>
           </form>
         )}
 
-        {message ? (
-          <p className="mt-4 rounded-2xl bg-slate-100 px-4 py-3 text-sm text-slate-700">{message}</p>
-        ) : null}
+        {/* OTP Verification Form */}
+        {step === 'verify' && (
+          <form className="space-y-5" onSubmit={handleVerify}>
+            {/* Verify via toggle */}
+            <div>
+              <p className="text-sm font-medium text-slate-700 mb-2">Verify using</p>
+              <div className="flex rounded-2xl border border-slate-200 p-1 bg-slate-50">
+                <button
+                  type="button"
+                  onClick={() => { setVerifyType('email'); setOtp(''); }}
+                  className={`flex-1 rounded-xl py-2 text-sm font-semibold transition ${
+                    verifyType === 'email' ? 'bg-white shadow text-[#4a7c23]' : 'text-slate-500'
+                  }`}
+                >
+                  📧 Email
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setVerifyType('mobile'); setOtp(''); }}
+                  className={`flex-1 rounded-xl py-2 text-sm font-semibold transition ${
+                    verifyType === 'mobile' ? 'bg-white shadow text-[#4a7c23]' : 'text-slate-500'
+                  }`}
+                >
+                  📱 Mobile
+                </button>
+              </div>
+            </div>
 
-        <p className="mt-6 text-center text-sm text-slate-600">
+            <div className="bg-slate-50 rounded-2xl px-4 py-3 text-sm text-slate-600 border border-slate-200">
+              Sending OTP to:{' '}
+              <span className="font-semibold text-slate-800">
+                {verifyType === 'email' ? email : mobile}
+              </span>
+            </div>
+
+            <label className="block text-sm font-medium text-slate-700">
+              Enter 6-digit OTP
+              <input
+                value={otp}
+                onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                type="text"
+                inputMode="numeric"
+                maxLength={6}
+                autoFocus
+                className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none transition focus:border-[#4a7c23] focus:ring-2 focus:ring-[#4a7c23]/10 tracking-widest text-center text-lg font-bold"
+                placeholder="• • • • • •"
+              />
+            </label>
+
+            <button
+              type="submit"
+              className="w-full rounded-2xl bg-[#4a7c23] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#3d6a1c] disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={loading || otp.length !== 6}
+            >
+              {loading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  Verifying...
+                </span>
+              ) : (
+                'Verify & Continue'
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => { setStep('register'); setOtp(''); }}
+              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
+            >
+              ← Back to Registration
+            </button>
+          </form>
+        )}
+
+        {/* Message Box */}
+        {message.text && (
+          <div className={`mt-5 rounded-2xl px-4 py-3 text-sm ${msgColor}`}>
+            {message.text}
+          </div>
+        )}
+
+        <p className="mt-6 text-center text-sm text-slate-500">
           Already have an account?{' '}
           <Link to="/login" className="font-semibold text-[#4a7c23] hover:text-[#3d6a1c]">
-            Login
+            Sign in
           </Link>
         </p>
       </div>
