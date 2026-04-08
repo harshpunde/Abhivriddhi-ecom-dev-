@@ -1,573 +1,500 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../../context/CartContext';
-import { createOrder, verifyPayment } from '../../services/api';
-import { CheckCircle, ShieldCheck, MapPin, Phone, Home, Package } from 'lucide-react';
 
+/* ─── Constants ──────────────────────────────────────────────── */
 const INDIAN_STATES = [
-  'Andaman and Nicobar Islands', 'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar',
-  'Chandigarh', 'Chhattisgarh', 'Dadra and Nagar Haveli and Daman & Diu', 'Delhi', 'Goa',
-  'Gujarat', 'Haryana', 'Himachal Pradesh', 'Jammu & Kashmir', 'Jharkhand', 'Karnataka',
-  'Kerala', 'Ladakh', 'Lakshadweep', 'Madhya Pradesh', 'Maharashtra', 'Manipur', 'Meghalaya',
-  'Mizoram', 'Nagaland', 'Odisha', 'Puducherry', 'Punjab', 'Rajasthan', 'Sikkim', 'Tamil Nadu',
-  'Telangana', 'Tripura', 'Uttar Pradesh', 'Uttarakhand', 'West Bengal',
+  'Andaman and Nicobar Islands','Andhra Pradesh','Arunachal Pradesh','Assam','Bihar',
+  'Chandigarh','Chhattisgarh','Dadra and Nagar Haveli and Daman & Diu','Delhi','Goa',
+  'Gujarat','Haryana','Himachal Pradesh','Jammu & Kashmir','Jharkhand','Karnataka',
+  'Kerala','Ladakh','Lakshadweep','Madhya Pradesh','Maharashtra','Manipur','Meghalaya',
+  'Mizoram','Nagaland','Odisha','Puducherry','Punjab','Rajasthan','Sikkim','Tamil Nadu',
+  'Telangana','Tripura','Uttar Pradesh','Uttarakhand','West Bengal',
 ];
 
+const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:5000/api';
+
+/* ─── Input styles helper ────────────────────────────────────── */
+const inp = (hasError) => ({
+  padding: '11px 14px',
+  borderRadius: 10,
+  fontSize: 14,
+  width: '100%',
+  boxSizing: 'border-box',
+  border: hasError ? '1.5px solid #ef4444' : '1.5px solid #e2e8f0',
+  background: hasError ? '#fff5f5' : '#f8fafc',
+  outline: 'none',
+  fontFamily: 'inherit',
+  transition: 'border .15s',
+});
+
+/* ─── FIELD WRAPPER — defined OUTSIDE to keep stable reference ─ */
+function FormField({ label, required, error, children }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+      <label style={{ fontSize: 13, fontWeight: 600, color: '#374151' }}>
+        {label}
+        {required && <span style={{ color: '#ef4444' }}> *</span>}
+      </label>
+      {children}
+      {error && <p style={{ fontSize: 12, color: '#ef4444', margin: '2px 0 0' }}>{error}</p>}
+    </div>
+  );
+}
+
+/* ─── MAIN COMPONENT ─────────────────────────────────────────── */
 export default function CheckoutPage() {
   const { cartItems, clearCart } = useCart();
   const navigate = useNavigate();
+
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
-  const [orderId, setOrderId] = useState(null);
+  const [orderId, setOrderId] = useState('');
   const [errors, setErrors] = useState({});
-  const [showMockRazorpay, setShowMockRazorpay] = useState(false);
-  const [mockOrderData, setMockOrderData] = useState(null);
 
-  const [formData, setFormData] = useState({
-    fullName: '',
-    mobile: '',
-    email: '',
-    addressLine: '',
-    landmark: '',
-    city: '',
-    state: '',
-    pincode: '',
+  const [form, setForm] = useState({
+    fullName: '', mobile: '', email: '',
+    addressLine: '', landmark: '', city: '', state: '', pincode: '',
   });
 
-  const totalAmount = cartItems.reduce((sum, i) => sum + i.price * i.qty, 0);
+  const total = cartItems.reduce((s, i) => s + i.price * i.qty, 0);
 
-  // Load Razorpay script
+  // Load Razorpay SDK
   useEffect(() => {
-    const script = document.createElement('script');
-    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-    script.async = true;
-    document.body.appendChild(script);
-    return () => {
-      if (document.body.contains(script)) {
-        document.body.removeChild(script);
-      }
-    };
+    if (document.querySelector('script[src*="razorpay"]')) return;
+    const s = document.createElement('script');
+    s.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    s.async = true;
+    document.body.appendChild(s);
   }, []);
 
-  // Pre-fill user data if logged in
+  // Pre-fill from localStorage
   useEffect(() => {
     try {
-      const userData = JSON.parse(localStorage.getItem('user') || '{}');
-      if (userData.name) {
-        setFormData((prev) => ({
-          ...prev,
-          fullName: userData.name || '',
-          email: userData.email || '',
-          mobile: userData.mobile ? userData.mobile.replace('+91', '') : '',
+      const u = JSON.parse(localStorage.getItem('user') || '{}');
+      if (u.name) {
+        setForm(p => ({
+          ...p,
+          fullName: u.name || '',
+          email:    u.email || '',
+          mobile:   (u.mobile || '').replace('+91', ''),
         }));
       }
-    } catch {
-      // ignore
-    }
+    } catch { /* ignore */ }
   }, []);
 
-  const handleChange = (e) => {
+  const onChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-    // Clear field error on change
-    if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: '' }));
-    }
+    setForm(p => ({ ...p, [name]: value }));
+    if (errors[name]) setErrors(p => ({ ...p, [name]: '' }));
   };
 
   const validate = () => {
-    const newErrors = {};
-    if (!formData.fullName.trim()) newErrors.fullName = 'Full name is required';
-    if (!formData.mobile.trim() || !/^[6-9]\d{9}$/.test(formData.mobile.trim())) {
-      newErrors.mobile = 'Enter a valid 10-digit mobile number';
-    }
-    if (!formData.addressLine.trim()) newErrors.addressLine = 'Address is required';
-    if (!formData.city.trim()) newErrors.city = 'City is required';
-    if (!formData.state) newErrors.state = 'Please select your state';
-    if (!formData.pincode.trim() || !/^\d{6}$/.test(formData.pincode.trim())) {
-      newErrors.pincode = 'Enter a valid 6-digit pincode';
-    }
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    const e = {};
+    if (!form.fullName.trim())                             e.fullName    = 'Full name is required';
+    if (!/^[6-9]\d{9}$/.test(form.mobile.trim()))         e.mobile      = 'Enter valid 10-digit mobile number';
+    if (!form.addressLine.trim())                          e.addressLine = 'Address is required';
+    if (!form.city.trim())                                 e.city        = 'City is required';
+    if (!form.state)                                       e.state       = 'Select your state';
+    if (!/^\d{6}$/.test(form.pincode.trim()))              e.pincode     = 'Enter valid 6-digit pincode';
+    setErrors(e);
+    return Object.keys(e).length === 0;
   };
 
-  const displayRazorpay = async (orderData, key_id, dbOrderId) => {
-    // If we are using dummy keys (because no RAZORPAY_KEY_ID in .env)
-    // We display a Mock Razorpay modal instead of crashing.
-    if (key_id === 'rzp_test_dummykey123456') {
+  const openRealRazorpay = (order, key, dbId) => {
+    if (!window.Razorpay) {
+      alert('Razorpay is still loading. Please try again.');
       setLoading(false);
-      setMockOrderData({ ...orderData, dbOrderId, key_id });
-      setShowMockRazorpay(true);
       return;
     }
-
     const options = {
-      key: key_id,
-      amount: orderData.amount,
-      currency: orderData.currency || 'INR',
-      name: 'Abhivriddhi Organics',
+      key,
+      amount:      order.amount,
+      currency:    order.currency || 'INR',
+      name:        'Abhivriddhi Organics',
       description: 'Organic Products Purchase',
-      image: '/logo.png',
-      order_id: orderData.id,
-      handler: async function (response) {
+      order_id:    order.id,
+      prefill: {
+        name:    form.fullName,
+        email:   form.email,
+        contact: form.mobile.startsWith('+91') ? form.mobile : `+91${form.mobile}`,
+      },
+      notes: { address: form.addressLine, city: form.city, state: form.state, pincode: form.pincode },
+      theme: { color: '#4a7c23' },
+      config: {
+        display: {
+          blocks: {
+            upi: {
+              name: 'Pay using UPI',
+              instruments: [{ method: 'upi' }]
+            },
+            cards: {
+              name: 'Pay using Cards',
+              instruments: [{ method: 'card' }]
+            },
+            banks: {
+              name: 'Netbanking',
+              instruments: [{ method: 'netbanking' }]
+            }
+          },
+          sequence: ['block.upi', 'block.cards', 'block.banks'],
+          preferences: { show_default_blocks: false }
+        }
+      },
+      modal: { ondismiss: () => setLoading(false) },
+      handler: async (response) => {
         setLoading(true);
         try {
-          const verifyRes = await verifyPayment({
-            razorpay_payment_id: response.razorpay_payment_id,
-            razorpay_order_id: response.razorpay_order_id,
-            razorpay_signature: response.razorpay_signature,
-            dbOrderId,
+          const res = await fetch(`${BASE_URL}/payment/verify`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_order_id:   response.razorpay_order_id,
+              razorpay_signature:  response.razorpay_signature,
+              dbOrderId:           dbId,
+            }),
           });
-          if (verifyRes.success) {
-            setOrderId(dbOrderId);
-            if (typeof clearCart === 'function') clearCart();
+          const data = await res.json();
+          if (data.success) {
+            clearCart();
+            setOrderId(dbId || response.razorpay_payment_id);
             setSuccess(true);
           } else {
-            alert('Payment verification failed. Please contact support.');
+            alert('Payment verification failed. Contact support.');
           }
-        } catch (err) {
-          console.error('Payment verification error:', err);
-          alert('Payment verification error. Please contact support with your payment ID: ' + response.razorpay_payment_id);
+        } catch {
+          alert('Verification error. Contact support.');
         }
         setLoading(false);
       },
-      prefill: {
-        name: formData.fullName,
-        email: formData.email || '',
-        contact: formData.mobile.startsWith('+91') ? formData.mobile : `+91${formData.mobile}`,
-      },
-      notes: {
-        address: formData.addressLine,
-        city: formData.city,
-        state: formData.state,
-        pincode: formData.pincode,
-      },
-      theme: { color: '#4a7c23' },
-      modal: {
-        ondismiss: function () {
-          setLoading(false);
-        },
-      },
     };
-
-    const paymentObject = new window.Razorpay(options);
-    paymentObject.on('payment.failed', function (response) {
-      setLoading(false);
-      alert('Payment failed: ' + (response.error?.description || 'Unknown error'));
-    });
-    paymentObject.open();
+    const rzp = new window.Razorpay(options);
+    rzp.on('payment.failed', () => { setLoading(false); alert('Payment failed. Please try again.'); });
+    rzp.open();
   };
 
-  const handleMockRazorpaySuccess = async () => {
-    setShowMockRazorpay(false);
-    setLoading(true);
-    // Simulate verification
-    try {
-      const verifyRes = await verifyPayment({
-        razorpay_payment_id: `mock_pay_${Date.now()}`,
-        razorpay_order_id: mockOrderData.id,
-        razorpay_signature: 'mock_signature', // Backend bypasses this in complete dummy mode
-        dbOrderId: mockOrderData.dbOrderId,
-      });
-      if (verifyRes.success) {
-        setOrderId(mockOrderData.dbOrderId);
-        if (typeof clearCart === 'function') clearCart();
-        setSuccess(true);
-      } else {
-        alert('Mock payment verification failed.');
-      }
-    } catch (err) {
-      console.error(err);
-      alert('Mock payment failed.');
-    }
-    setLoading(false);
-  };
-
-  const handleCheckout = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (cartItems.length === 0) {
-      return alert('Your cart is empty!');
-    }
+    if (cartItems.length === 0) return alert('Your cart is empty!');
     if (!validate()) return;
 
     setLoading(true);
     try {
-      const userId = JSON.parse(localStorage.getItem('user') || '{}')?.id;
-      const payload = {
-        shippingAddress: {
-          fullName: formData.fullName.trim(),
-          mobile: formData.mobile.trim().startsWith('+91')
-            ? formData.mobile.trim()
-            : `+91${formData.mobile.trim()}`,
-          addressLine: formData.addressLine.trim(),
-          landmark: formData.landmark.trim(),
-          city: formData.city.trim(),
-          state: formData.state,
-          pincode: formData.pincode.trim(),
-          email: formData.email.trim(),
-        },
-        cartItems: cartItems.map((item) => ({
-          productId: item.id,
-          name: item.name,
-          price: item.price,
-          quantity: item.qty,
-          image: item.img,
-        })),
-        totalAmount,
-        userId: userId || null,
-      };
+      const userId = JSON.parse(localStorage.getItem('user') || '{}')?.id || null;
+      const res = await fetch(`${BASE_URL}/payment/checkout`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          shippingAddress: {
+            fullName:    form.fullName.trim(),
+            mobile:      form.mobile.trim().startsWith('+91') ? form.mobile.trim() : `+91${form.mobile.trim()}`,
+            email:       form.email.trim(),
+            addressLine: form.addressLine.trim(),  // ← matches Order schema
+            landmark:    form.landmark.trim(),
+            city:        form.city.trim(),
+            state:       form.state,
+            pincode:     form.pincode.trim(),
+          },
+          cartItems: cartItems.map(i => ({
+            productId: String(i.id), name: i.name, price: i.price, quantity: i.qty, image: i.img || '',
+          })),
+          totalAmount: total,
+          userId,
+        }),
+      });
+      const data = await res.json();
 
-      const res = await createOrder(payload);
-      if (res.success) {
-        displayRazorpay(res.order, res.key_id, res.dbOrderId);
+      if (data.success) {
+        const key = data.key_id || '';
+        openRealRazorpay(data.order, key, data.dbOrderId);
       } else {
-        alert('Failed to initialize checkout. Please try again.');
+        alert(data.message || 'Could not create order. Please try again.');
         setLoading(false);
       }
-    } catch (error) {
-      console.error('Checkout error:', error);
-      alert('Something went wrong while initiating checkout. Please try again.');
+    } catch (err) {
+      console.error('Checkout error:', err);
+      alert('Network error when contacting checkout API. Please ensure the backend is running.');
       setLoading(false);
     }
   };
 
-  // Success screen
-  if (success) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-slate-50 mt-16 px-4">
-        <div className="bg-white p-10 rounded-3xl shadow-xl text-center max-w-md w-full">
-          <div className="mx-auto w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mb-6">
-            <CheckCircle className="text-green-600 w-12 h-12" />
-          </div>
-          <h2 className="text-3xl font-bold text-slate-800 mb-2">Order Placed! 🎉</h2>
-          {orderId && (
-            <p className="text-xs text-slate-400 mb-4 font-mono">Order ID: {orderId}</p>
-          )}
-          <p className="text-slate-600 mb-8">
-            Thank you for shopping with <strong>Abhivriddhi Organics</strong>. Your order is being processed and will be shipped soon.
+  /* ── Success screen ── */
+  if (success) return (
+    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg,#f0fdf4,#f8fafc)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+      <div style={{ background: '#fff', borderRadius: 28, boxShadow: '0 20px 60px rgba(0,0,0,.1)', padding: '48px 40px', maxWidth: 480, width: '100%', textAlign: 'center' }}>
+        {/* Animated checkmark */}
+        <div style={{ width: 96, height: 96, borderRadius: '50%', background: 'linear-gradient(135deg,#4a7c23,#6ab04c)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 28px', fontSize: 44, boxShadow: '0 8px 32px rgba(74,124,35,.3)' }}>✅</div>
+
+        <h2 style={{ fontSize: 30, fontWeight: 800, color: '#1e293b', marginBottom: 8 }}>Order Placed! 🎉</h2>
+        <p style={{ fontSize: 13, color: '#94a3b8', fontFamily: 'monospace', marginBottom: 8 }}>
+          Order ID: <strong style={{ color: '#4a7c23' }}>{String(orderId).slice(-8).toUpperCase()}</strong>
+        </p>
+        <p style={{ color: '#64748b', marginBottom: 8, lineHeight: 1.6, fontSize: 14 }}>
+          Thank you for shopping with <strong>Abhivriddhi Organics</strong>.<br />Your order is confirmed and will be shipped soon.
+        </p>
+        {form.email && (
+          <p style={{ fontSize: 13, color: '#4a7c23', background: '#f0fdf4', borderRadius: 10, padding: '10px 16px', marginBottom: 24 }}>
+            📧 Invoice sent to <strong>{form.email}</strong>
           </p>
-          <div className="space-y-3">
-            <button
-              onClick={() => navigate('/dashboard')}
-              className="w-full bg-[#4a7c23] text-white py-3 rounded-xl font-semibold hover:bg-[#3d6a1c] transition"
-            >
-              Track My Order
-            </button>
-            <button
-              onClick={() => navigate('/products')}
-              className="w-full border border-slate-200 text-slate-700 py-3 rounded-xl font-semibold hover:bg-slate-50 transition"
-            >
-              Continue Shopping
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
+        )}
 
+        {/* Download Invoice */}
+        <a
+          href={`${BASE_URL}/payment/invoice/${orderId}`}
+          target="_blank"
+          rel="noreferrer"
+          style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+            width: '100%', padding: 14, background: '#4a7c23', color: '#fff',
+            border: 'none', borderRadius: 14, fontWeight: 700, fontSize: 15,
+            cursor: 'pointer', marginBottom: 12, textDecoration: 'none',
+            boxSizing: 'border-box'
+          }}
+        >
+          ⬇️ Download Invoice PDF
+        </a>
+
+        <button
+          onClick={() => navigate('/products')}
+          style={{ width: '100%', padding: 14, background: 'transparent', color: '#4a7c23', border: '2px solid #4a7c23', borderRadius: 14, fontWeight: 700, fontSize: 15, cursor: 'pointer', marginBottom: 10 }}
+        >
+          Continue Shopping
+        </button>
+        <button
+          onClick={() => navigate('/dashboard')}
+          style={{ width: '100%', padding: 14, background: 'transparent', color: '#64748b', border: '2px solid #e2e8f0', borderRadius: 14, fontWeight: 600, fontSize: 14, cursor: 'pointer' }}
+        >
+          Track My Orders
+        </button>
+      </div>
+    </div>
+  );
+
+
+  /* ── Main page ── */
   return (
-    <div className="min-h-screen bg-slate-50 pt-24 pb-16 px-4 sm:px-6 lg:px-8">
-      {/* MOCK RAZORPAY MODAL FOR DEMO */}
-      {showMockRazorpay && (
-        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden animate-in fade-in zoom-in duration-200">
-            {/* Header */}
-            <div className="bg-[#4a7c23] p-5 text-white flex justify-between items-center">
-              <div>
-                <h3 className="font-bold text-lg">Abhivriddhi Organics</h3>
-                <p className="text-sm opacity-90">Test Mode Payment</p>
-              </div>
-              <button 
-                onClick={() => setShowMockRazorpay(false)}
-                className="text-white hover:bg-black/20 p-1.5 rounded-lg transition"
-              >✕</button>
-            </div>
-            
-            {/* Body */}
-            <div className="p-6">
-              <div className="mb-6 pb-6 border-b border-slate-100 flex justify-between items-center">
-                <span className="text-slate-500 font-medium">Card/UPI payment</span>
-                <span className="text-2xl font-bold text-slate-800">
-                  ₹{(mockOrderData?.amount / 100).toLocaleString('en-IN') || totalAmount}
-                </span>
-              </div>
-              
-              <div className="bg-blue-50 border border-blue-200 text-blue-800 p-3 rounded-lg text-sm mb-6 flex gap-2">
-                <span>ℹ️</span> 
-                This is a mock checkout because RAZORPAY_KEY_ID is missing in the .env file.
-              </div>
+    <div style={{ minHeight: '100vh', background: '#f1f5f9', fontFamily: "'Inter',system-ui,sans-serif" }}>
 
-              <div className="space-y-3">
-                <button 
-                  onClick={handleMockRazorpaySuccess}
-                  className="w-full bg-[#1b9a59] text-white py-3 rounded-lg font-bold shadow hover:bg-[#15814a] transition flex items-center justify-center gap-2"
-                >
-                  <CheckCircle className="w-5 h-5" /> Simulate Success
-                </button>
-                <button 
-                  onClick={() => { setShowMockRazorpay(false); setLoading(false); alert('Payment failed by user simulation.'); }}
-                  className="w-full bg-red-100 text-red-700 py-3 rounded-lg font-semibold hover:bg-red-200 transition"
-                >
-                  Simulate Failure
-                </button>
-              </div>
-            </div>
-          </div>
+      {/* Top bar */}
+      <div style={{ background: '#fff', borderBottom: '1px solid #e2e8f0', padding: '16px 24px', display: 'flex', alignItems: 'center', gap: 16, position: 'sticky', top: 0, zIndex: 100, boxShadow: '0 1px 8px rgba(0,0,0,.05)' }}>
+        <button onClick={() => navigate(-1)} style={{ background: 'none', border: '1.5px solid #e2e8f0', borderRadius: 10, padding: '6px 14px', cursor: 'pointer', color: '#374151', fontWeight: 600, fontSize: 14 }}>
+          ← Back
+        </button>
+        <div>
+          <h1 style={{ margin: 0, fontSize: 20, fontWeight: 800, color: '#1e293b' }}>Shipping & Payment</h1>
+          <p style={{ margin: 0, fontSize: 13, color: '#94a3b8' }}>Fill your details to place the order</p>
         </div>
-      )}
+        <div style={{ marginLeft: 'auto', fontSize: 13, color: '#4a7c23', fontWeight: 600 }}>🔒 100% Secure</div>
+      </div>
 
-      <div className="max-w-6xl mx-auto">
-        {/* Page Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-slate-900">Checkout</h1>
-          <p className="text-slate-500 mt-1">Fill in your shipping details to complete your order.</p>
-        </div>
+      {/* Body — two column */}
+      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '32px 20px', display: 'grid', gridTemplateColumns: 'minmax(0,1.6fr) minmax(0,1fr)', gap: 28, alignItems: 'start' }}>
 
-        <div className="flex flex-col lg:flex-row gap-8">
-          {/* Shipping Form */}
-          <div className="lg:w-2/3">
-            <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100">
-              <h2 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
-                <MapPin className="text-[#4a7c23] w-5 h-5" />
-                Shipping Information
-              </h2>
+        {/* ── LEFT: Form ── */}
+        <div style={{ background: '#fff', borderRadius: 20, boxShadow: '0 2px 16px rgba(0,0,0,.06)', overflow: 'hidden' }}>
 
-              <form className="space-y-5" onSubmit={handleCheckout} noValidate>
-                {/* Name + Mobile */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">
-                      Full Name <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="fullName"
-                      value={formData.fullName}
-                      onChange={handleChange}
-                      className={`w-full p-3 bg-slate-50 border rounded-xl outline-none transition focus:border-[#4a7c23] focus:ring-2 focus:ring-[#4a7c23]/10 ${
-                        errors.fullName ? 'border-red-400 bg-red-50' : 'border-slate-200'
-                      }`}
-                      placeholder="Recipient's full name"
-                    />
-                    {errors.fullName && <p className="mt-1 text-xs text-red-500">{errors.fullName}</p>}
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">
-                      Mobile Number <span className="text-red-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-500 font-medium">+91</span>
-                      <input
-                        type="tel"
-                        name="mobile"
-                        value={formData.mobile}
-                        onChange={handleChange}
-                        className={`w-full pl-12 pr-3 py-3 bg-slate-50 border rounded-xl outline-none transition focus:border-[#4a7c23] focus:ring-2 focus:ring-[#4a7c23]/10 ${
-                          errors.mobile ? 'border-red-400 bg-red-50' : 'border-slate-200'
-                        }`}
-                        placeholder="9876543210"
-                        maxLength={10}
-                      />
-                    </div>
-                    {errors.mobile && <p className="mt-1 text-xs text-red-500">{errors.mobile}</p>}
-                  </div>
-                </div>
-
-                {/* Email (optional) */}
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">
-                    Email <span className="text-slate-400 font-normal">(for order confirmation)</span>
-                  </label>
-                  <input
-                    type="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none transition focus:border-[#4a7c23] focus:ring-2 focus:ring-[#4a7c23]/10"
-                    placeholder="you@example.com"
-                  />
-                </div>
-
-                {/* Address */}
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">
-                    Address / Flat / Street <span className="text-red-500">*</span>
-                  </label>
-                  <textarea
-                    name="addressLine"
-                    value={formData.addressLine}
-                    onChange={handleChange}
-                    rows={2}
-                    className={`w-full p-3 bg-slate-50 border rounded-xl outline-none transition focus:border-[#4a7c23] focus:ring-2 focus:ring-[#4a7c23]/10 resize-none ${
-                      errors.addressLine ? 'border-red-400 bg-red-50' : 'border-slate-200'
-                    }`}
-                    placeholder="House/Flat No., Building, Street, Area"
-                  />
-                  {errors.addressLine && <p className="mt-1 text-xs text-red-500">{errors.addressLine}</p>}
-                </div>
-
-                {/* Landmark */}
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">
-                    Landmark <span className="text-slate-400 font-normal">(optional)</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="landmark"
-                    value={formData.landmark}
-                    onChange={handleChange}
-                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none transition focus:border-[#4a7c23] focus:ring-2 focus:ring-[#4a7c23]/10"
-                    placeholder="Near school, temple, etc."
-                  />
-                </div>
-
-                {/* City, State, Pincode */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">
-                      City <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="city"
-                      value={formData.city}
-                      onChange={handleChange}
-                      className={`w-full p-3 bg-slate-50 border rounded-xl outline-none transition focus:border-[#4a7c23] focus:ring-2 focus:ring-[#4a7c23]/10 ${
-                        errors.city ? 'border-red-400 bg-red-50' : 'border-slate-200'
-                      }`}
-                      placeholder="Mumbai"
-                    />
-                    {errors.city && <p className="mt-1 text-xs text-red-500">{errors.city}</p>}
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">
-                      State <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                      name="state"
-                      value={formData.state}
-                      onChange={handleChange}
-                      className={`w-full p-3 bg-slate-50 border rounded-xl outline-none transition focus:border-[#4a7c23] focus:ring-2 focus:ring-[#4a7c23]/10 ${
-                        errors.state ? 'border-red-400 bg-red-50' : 'border-slate-200'
-                      }`}
-                    >
-                      <option value="">Select state</option>
-                      {INDIAN_STATES.map((s) => (
-                        <option key={s} value={s}>{s}</option>
-                      ))}
-                    </select>
-                    {errors.state && <p className="mt-1 text-xs text-red-500">{errors.state}</p>}
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">
-                      Pincode <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="pincode"
-                      value={formData.pincode}
-                      onChange={handleChange}
-                      maxLength={6}
-                      className={`w-full p-3 bg-slate-50 border rounded-xl outline-none transition focus:border-[#4a7c23] focus:ring-2 focus:ring-[#4a7c23]/10 ${
-                        errors.pincode ? 'border-red-400 bg-red-50' : 'border-slate-200'
-                      }`}
-                      placeholder="400001"
-                    />
-                    {errors.pincode && <p className="mt-1 text-xs text-red-500">{errors.pincode}</p>}
-                  </div>
-                </div>
-
-                {/* Security note */}
-                <div className="flex items-start gap-3 bg-green-50 border border-green-200 rounded-2xl px-4 py-3">
-                  <ShieldCheck className="text-green-600 w-5 h-5 mt-0.5 flex-shrink-0" />
-                  <p className="text-sm text-green-700">
-                    Your payment is processed securely through <strong>Razorpay</strong>. We never store your card details.
-                  </p>
-                </div>
-
-                {/* Submit */}
-                <button
-                  type="submit"
-                  disabled={loading || cartItems.length === 0}
-                  className="w-full mt-2 bg-[#4a7c23] text-white py-4 rounded-2xl font-bold text-base shadow-md hover:bg-[#3d6a1c] transition disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {loading ? (
-                    <span className="flex items-center justify-center gap-2">
-                      <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      Processing...
-                    </span>
-                  ) : (
-                    `Pay ₹${totalAmount.toLocaleString('en-IN')} with Razorpay`
-                  )}
-                </button>
-              </form>
-            </div>
+          {/* Step header */}
+          <div style={{ background: 'linear-gradient(135deg,#4a7c23,#6ab04c)', padding: '20px 28px', display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'space-around' }}>
+            {['📦 Cart', '📍 Shipping', '💳 Payment'].map((step, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1 }}>
+                {i > 0 && <div style={{ flex: 1, height: 2, background: i <= 1 ? '#fff' : 'rgba(255,255,255,.3)' }} />}
+                <span style={{ color: i <= 1 ? '#fff' : 'rgba(255,255,255,.5)', fontSize: 13, fontWeight: i === 1 ? 800 : 500, whiteSpace: 'nowrap' }}>{step}</span>
+              </div>
+            ))}
           </div>
 
-          {/* Order Summary */}
-          <div className="lg:w-1/3">
-            <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 sticky top-24">
-              <h3 className="text-xl font-bold text-slate-900 mb-5 flex items-center gap-2">
-                <Package className="text-[#4a7c23] w-5 h-5" />
-                Order Summary
-              </h3>
+          <form onSubmit={handleSubmit} noValidate style={{ padding: '28px 28px 32px' }}>
+            <h2 style={{ fontSize: 18, fontWeight: 700, color: '#1e293b', marginBottom: 20 }}>📍 Delivery Address</h2>
 
-              {cartItems.length === 0 ? (
-                <div className="text-center py-8 text-slate-400">
-                  <Package className="w-12 h-12 mx-auto mb-3 opacity-40" />
-                  <p className="text-sm">Your cart is empty</p>
+            {/* Row 1: Name & Mobile */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+              <FormField label="Full Name" required error={errors.fullName}>
+                <input
+                  name="fullName" value={form.fullName} onChange={onChange}
+                  placeholder="Recipient's full name"
+                  style={inp(errors.fullName)}
+                  onFocus={e => e.target.style.border = '1.5px solid #4a7c23'}
+                  onBlur={e => e.target.style.border = errors.fullName ? '1.5px solid #ef4444' : '1.5px solid #e2e8f0'}
+                />
+              </FormField>
+
+              <FormField label="Mobile Number" required error={errors.mobile}>
+                <div style={{ position: 'relative' }}>
+                  <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 14, color: '#374151', fontWeight: 600, pointerEvents: 'none' }}>+91</span>
+                  <input
+                    type="tel" name="mobile" value={form.mobile} onChange={onChange}
+                    maxLength={10} placeholder="9876543210"
+                    style={{ ...inp(errors.mobile), paddingLeft: 48 }}
+                    onFocus={e => e.target.style.border = '1.5px solid #4a7c23'}
+                    onBlur={e => e.target.style.border = errors.mobile ? '1.5px solid #ef4444' : '1.5px solid #e2e8f0'}
+                  />
                 </div>
-              ) : (
+              </FormField>
+            </div>
+
+            {/* Email */}
+            <div style={{ marginBottom: 16 }}>
+              <FormField label="Email (for order confirmation)" error={errors.email}>
+                <input
+                  type="email" name="email" value={form.email} onChange={onChange}
+                  placeholder="you@example.com"
+                  style={inp(false)}
+                  onFocus={e => e.target.style.border = '1.5px solid #4a7c23'}
+                  onBlur={e => e.target.style.border = '1.5px solid #e2e8f0'}
+                />
+              </FormField>
+            </div>
+
+            {/* Address */}
+            <div style={{ marginBottom: 16 }}>
+              <FormField label="Address / Flat / Street" required error={errors.addressLine}>
+                <textarea
+                  name="addressLine" value={form.addressLine} onChange={onChange}
+                  rows={2} placeholder="House No., Building, Street, Area"
+                  style={{ ...inp(errors.addressLine), resize: 'none' }}
+                  onFocus={e => e.target.style.border = '1.5px solid #4a7c23'}
+                  onBlur={e => e.target.style.border = errors.addressLine ? '1.5px solid #ef4444' : '1.5px solid #e2e8f0'}
+                />
+              </FormField>
+            </div>
+
+            {/* Landmark */}
+            <div style={{ marginBottom: 16 }}>
+              <FormField label="Landmark (optional)">
+                <input
+                  name="landmark" value={form.landmark} onChange={onChange}
+                  placeholder="Near school, temple, etc."
+                  style={inp(false)}
+                  onFocus={e => e.target.style.border = '1.5px solid #4a7c23'}
+                  onBlur={e => e.target.style.border = '1.5px solid #e2e8f0'}
+                />
+              </FormField>
+            </div>
+
+            {/* City / State / Pincode */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, marginBottom: 24 }}>
+              <FormField label="City" required error={errors.city}>
+                <input
+                  name="city" value={form.city} onChange={onChange}
+                  placeholder="Mumbai"
+                  style={inp(errors.city)}
+                  onFocus={e => e.target.style.border = '1.5px solid #4a7c23'}
+                  onBlur={e => e.target.style.border = errors.city ? '1.5px solid #ef4444' : '1.5px solid #e2e8f0'}
+                />
+              </FormField>
+
+              <FormField label="State" required error={errors.state}>
+                <select
+                  name="state" value={form.state} onChange={onChange}
+                  style={{ ...inp(errors.state), cursor: 'pointer' }}
+                  onFocus={e => e.target.style.border = '1.5px solid #4a7c23'}
+                  onBlur={e => e.target.style.border = errors.state ? '1.5px solid #ef4444' : '1.5px solid #e2e8f0'}
+                >
+                  <option value="">Select state</option>
+                  {INDIAN_STATES.map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
+              </FormField>
+
+              <FormField label="Pincode" required error={errors.pincode}>
+                <input
+                  name="pincode" value={form.pincode} onChange={onChange}
+                  maxLength={6} placeholder="400001"
+                  style={inp(errors.pincode)}
+                  onFocus={e => e.target.style.border = '1.5px solid #4a7c23'}
+                  onBlur={e => e.target.style.border = errors.pincode ? '1.5px solid #ef4444' : '1.5px solid #e2e8f0'}
+                />
+              </FormField>
+            </div>
+
+            {/* Security badge */}
+            <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 12, padding: '12px 16px', marginBottom: 24, display: 'flex', gap: 10 }}>
+              <span style={{ fontSize: 18, flexShrink: 0 }}>🔒</span>
+              <p style={{ margin: 0, fontSize: 13, color: '#166534', lineHeight: 1.6 }}>
+                Your payment is processed securely via <strong>Razorpay</strong>. We never store your card details.
+              </p>
+            </div>
+
+            {/* Submit */}
+            <button
+              type="submit"
+              disabled={loading || cartItems.length === 0}
+              style={{
+                width: '100%', padding: '16px',
+                background: loading ? '#86a96a' : '#4a7c23',
+                color: '#fff', border: 'none', borderRadius: 14, fontWeight: 800, fontSize: 16,
+                cursor: loading || cartItems.length === 0 ? 'not-allowed' : 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                boxShadow: '0 4px 16px rgba(74,124,35,.35)',
+              }}
+            >
+              {loading ? (
                 <>
-                  <div className="space-y-3 mb-5 max-h-[280px] overflow-y-auto pr-1 scrollbar-thin">
-                    {cartItems.map((item) => (
-                      <div
-                        key={item.id}
-                        className="flex justify-between items-center bg-slate-50 p-3 rounded-xl gap-3"
-                      >
-                        <div className="flex items-center gap-3 min-w-0">
-                          <img
-                            src={item.img}
-                            alt={item.name}
-                            className="w-12 h-12 object-cover rounded-lg flex-shrink-0"
-                            onError={(e) => { e.target.src = '/placeholder.png'; }}
-                          />
-                          <div className="min-w-0">
-                            <p className="text-sm font-bold text-slate-800 line-clamp-1">{item.name}</p>
-                            <p className="text-xs text-slate-500">Qty: {item.qty}</p>
-                          </div>
-                        </div>
-                        <span className="font-bold text-[#4a7c23] flex-shrink-0">
-                          ₹{(item.price * item.qty).toLocaleString('en-IN')}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="border-t border-slate-100 pt-4 space-y-3">
-                    <div className="flex justify-between text-slate-600 text-sm">
-                      <span>Subtotal ({cartItems.reduce((s, i) => s + i.qty, 0)} items)</span>
-                      <span>₹{totalAmount.toLocaleString('en-IN')}</span>
-                    </div>
-                    <div className="flex justify-between text-slate-600 text-sm">
-                      <span>Shipping</span>
-                      <span className="text-green-600 font-semibold">FREE</span>
-                    </div>
-                    <div className="flex justify-between text-slate-600 text-sm">
-                      <span>Tax</span>
-                      <span>Included</span>
-                    </div>
-                    <div className="flex justify-between text-lg font-bold text-slate-900 pt-3 border-t border-slate-200">
-                      <span>Total</span>
-                      <span>₹{totalAmount.toLocaleString('en-IN')}</span>
-                    </div>
-                  </div>
+                  <span style={{ width: 20, height: 20, border: '2px solid rgba(255,255,255,.3)', borderTopColor: '#fff', borderRadius: '50%', display: 'inline-block', animation: 'rzp-spin .8s linear infinite' }} />
+                  Processing…
                 </>
+              ) : (
+                `💳 Proceed to Pay ₹${total.toLocaleString('en-IN')}`
               )}
-            </div>
+            </button>
+          </form>
+        </div>
+
+        {/* ── RIGHT: Order Summary ── */}
+        <div style={{ position: 'sticky', top: 80 }}>
+          <div style={{ background: '#fff', borderRadius: 20, boxShadow: '0 2px 16px rgba(0,0,0,.06)', padding: 24 }}>
+            <h3 style={{ fontSize: 17, fontWeight: 700, color: '#1e293b', marginBottom: 18 }}>🛍️ Order Summary</h3>
+
+            {cartItems.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '32px 0', color: '#94a3b8' }}>
+                <div style={{ fontSize: 40, marginBottom: 8 }}>🛒</div>
+                <p style={{ margin: 0, fontSize: 14 }}>Your cart is empty</p>
+              </div>
+            ) : (
+              <>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxHeight: 300, overflowY: 'auto', marginBottom: 18 }}>
+                  {cartItems.map(item => (
+                    <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: 12, background: '#f8fafc', borderRadius: 12, padding: '10px 12px' }}>
+                      <img src={item.img} alt={item.name} style={{ width: 52, height: 52, objectFit: 'cover', borderRadius: 8, flexShrink: 0 }} onError={e => { e.target.src = '/placeholder.png'; }} />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <p style={{ margin: 0, fontWeight: 700, fontSize: 13, color: '#1e293b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</p>
+                        <p style={{ margin: 0, fontSize: 12, color: '#64748b' }}>Qty: {item.qty}</p>
+                      </div>
+                      <span style={{ fontWeight: 800, color: '#4a7c23', fontSize: 14, flexShrink: 0 }}>₹{(item.price * item.qty).toLocaleString('en-IN')}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, color: '#64748b' }}>
+                    <span>Subtotal ({cartItems.reduce((s, i) => s + i.qty, 0)} items)</span>
+                    <span>₹{total.toLocaleString('en-IN')}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, color: '#64748b' }}>
+                    <span>Shipping</span>
+                    <span style={{ color: '#16a34a', fontWeight: 700 }}>FREE</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, color: '#64748b' }}>
+                    <span>Tax</span><span>Included</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 18, fontWeight: 800, color: '#1e293b', paddingTop: 12, borderTop: '2px solid #f1f5f9' }}>
+                    <span>Total</span>
+                    <span>₹{total.toLocaleString('en-IN')}</span>
+                  </div>
+                </div>
+
+                <div style={{ marginTop: 20, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {['✅ 100% Organic & Natural', '🚚 Free Shipping on all orders', '🔄 Easy 7-day returns'].map((b, i) => (
+                    <p key={i} style={{ margin: 0, fontSize: 13, color: '#374151' }}>{b}</p>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>
+
+      <style>{`@keyframes rzp-spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 }

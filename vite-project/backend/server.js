@@ -1,3 +1,4 @@
+// Server last updated: 2026-04-09T03:30 — Twilio SMS active
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
@@ -41,10 +42,7 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
 // Database connection
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/abhivriddhi', {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-})
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/abhivriddhi')
 .then(() => console.log('MongoDB connected successfully'))
 .catch(err => console.error('MongoDB connection error:', err));
 

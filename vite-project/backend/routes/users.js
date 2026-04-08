@@ -1,9 +1,32 @@
 const express = require('express');
 const { body, validationResult } = require('express-validator');
 const User = require('../models/User');
+const Order = require('../models/Order');
 const { protect } = require('../middleware/auth');
 
 const router = express.Router();
+
+// ─── DEV ONLY: View all database data ─────────────────────────
+// Access at: http://localhost:5000/api/users/admin/data
+router.get('/admin/data', async (req, res) => {
+  if (process.env.NODE_ENV === 'production') {
+    return res.status(403).json({ message: 'Not available in production' });
+  }
+  try {
+    const users = await User.find({}).select('-password -otp -verificationToken').lean();
+    const orders = await Order.find({}).lean();
+    res.json({
+      summary: {
+        totalUsers: users.length,
+        totalOrders: orders.length,
+      },
+      users,
+      orders,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // Validation rules
 const updateProfileValidation = [

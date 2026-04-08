@@ -173,10 +173,7 @@ export default function AllProducts() {
         items={cartItems}
         onUpdate={updateQty}
         onRemove={removeFromCart}
-        onCheckout={() => {
-          setCartOpen(false);
-          navigate('/checkout');
-        }}
+        onCheckout={() => navigate('/checkout')}
       />
 
       <main className="main-content">

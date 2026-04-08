@@ -101,6 +101,19 @@ function AnnouncementBar() {
 // ─── Cart Drawer ──────────────────────────────────────────────
 function CartDrawer({ open, onClose, items, onUpdate, onRemove, onCheckout }) {
   const total = items.reduce((sum, i) => sum + i.price * i.qty, 0);
+  const navigate = useNavigate();
+
+  const handleCheckout = () => {
+    onClose();
+    // Small timeout so the drawer close animation doesn't block navigation
+    setTimeout(() => {
+      if (typeof onCheckout === 'function') {
+        onCheckout();
+      } else {
+        navigate('/checkout');
+      }
+    }, 80);
+  };
 
   useEffect(() => {
     document.body.style.overflow = open ? 'hidden' : '';
@@ -159,7 +172,7 @@ function CartDrawer({ open, onClose, items, onUpdate, onRemove, onCheckout }) {
                 <span>₹{total}/-</span>
               </div>
               <p className="cart-note">Shipping &amp; taxes calculated at checkout</p>
-              <button className="nav-btn-primary cart-checkout" onClick={onCheckout}>Proceed to Checkout</button>
+              <button className="nav-btn-primary cart-checkout" onClick={handleCheckout}>Proceed to Checkout</button>
               <button className="nav-btn-secondary" onClick={onClose}>Continue Shopping</button>
             </div>
           </>

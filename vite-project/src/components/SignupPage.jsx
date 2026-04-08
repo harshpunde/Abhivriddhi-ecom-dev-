@@ -19,14 +19,23 @@ export default function SignupPage() {
   const setSuccess = (text) => setMessage({ text, type: 'success' });
   const setInfo = (text) => setMessage({ text, type: 'info' });
 
+  const getFormattedMobile = () => {
+    let mob = mobile.trim();
+    if (/^[6-9]\d{9}$/.test(mob)) {
+      mob = `+91${mob}`;
+    }
+    return mob;
+  };
+
   const handleRegister = async (event) => {
     event.preventDefault();
 
     // Client-side validation
     if (name.trim().length < 2) return setError('Name must be at least 2 characters.');
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) return setError('Please enter a valid email address.');
-    if (!/^\+91[6-9]\d{9}$/.test(mobile.trim())) {
-      return setError('Please enter a valid Indian mobile number (e.g. +919876543210).');
+    const mob = getFormattedMobile();
+    if (!/^\+91[6-9]\d{9}$/.test(mob)) {
+      return setError('Please enter a valid 10-digit mobile number.');
     }
     if (password.length < 6) return setError('Password must be at least 6 characters.');
 
@@ -37,7 +46,7 @@ export default function SignupPage() {
       await registerUser({
         name: name.trim(),
         email: email.trim(),
-        mobile: mobile.trim(),
+        mobile: getFormattedMobile(),
         password,
       });
       setStep('verify');
@@ -62,7 +71,7 @@ export default function SignupPage() {
 
     try {
       const response = await verifyOTP({
-        identifier: (verifyType === 'email' ? email : mobile).trim(),
+        identifier: verifyType === 'email' ? email.trim() : getFormattedMobile(),
         otp: otp.trim(),
         type: verifyType,
         purpose: 'registration',
@@ -135,15 +144,18 @@ export default function SignupPage() {
             </label>
 
             <label className="block text-sm font-medium text-slate-700">
-              Mobile Number <span className="font-normal text-slate-400">(+91 format)</span>
-              <input
-                value={mobile}
-                onChange={(e) => setMobile(e.target.value)}
-                type="tel"
-                autoComplete="tel"
-                className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none transition focus:border-[#4a7c23] focus:ring-2 focus:ring-[#4a7c23]/10"
-                placeholder="+919876543210"
-              />
+              Mobile Number
+              <div className="relative mt-2">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-semibold text-slate-500 pointer-events-none">+91</span>
+                <input
+                  value={mobile.replace('+91', '')}
+                  onChange={(e) => setMobile(e.target.value)}
+                  type="tel"
+                  autoComplete="tel"
+                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 pl-12 pr-4 py-3 text-sm outline-none transition focus:border-[#4a7c23] focus:ring-2 focus:ring-[#4a7c23]/10"
+                  placeholder="9876543210"
+                />
+              </div>
             </label>
 
             <label className="block text-sm font-medium text-slate-700">
@@ -215,7 +227,7 @@ export default function SignupPage() {
             <div className="bg-slate-50 rounded-2xl px-4 py-3 text-sm text-slate-600 border border-slate-200">
               Sending OTP to:{' '}
               <span className="font-semibold text-slate-800">
-                {verifyType === 'email' ? email : mobile}
+                {verifyType === 'email' ? email : getFormattedMobile()}
               </span>
             </div>
 

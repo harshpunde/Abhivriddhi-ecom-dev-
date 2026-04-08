@@ -19,13 +19,22 @@ export default function LoginPage() {
   const setSuccess = (text) => setMessage({ text, type: 'success' });
   const setInfo = (text) => setMessage({ text, type: 'info' });
 
+  const getFormattedIdentifier = () => {
+    const id = identifier.trim();
+    if (!id.includes('@') && /^[6-9]\d{9}$/.test(id)) {
+      return `+91${id}`;
+    }
+    return id;
+  };
+
   const validateIdentifier = () => {
     if (!identifier.trim()) {
       setError('Please enter your email or mobile number.');
       return false;
     }
-    if (!isEmail && !/^\+91[6-9]\d{9}$/.test(identifier.trim())) {
-      setError('For mobile, use +91 format (e.g. +919876543210).');
+    const id = getFormattedIdentifier();
+    if (!id.includes('@') && !/^\+91[6-9]\d{9}$/.test(id)) {
+      setError('Please enter a valid email or 10-digit mobile number.');
       return false;
     }
     return true;
@@ -40,7 +49,7 @@ export default function LoginPage() {
 
     try {
       await sendOTP({
-        identifier: identifier.trim(),
+        identifier: getFormattedIdentifier(),
         type: authType,
         purpose: 'login',
       });
@@ -64,7 +73,7 @@ export default function LoginPage() {
 
     try {
       const response = await verifyOTP({
-        identifier: identifier.trim(),
+        identifier: getFormattedIdentifier(),
         otp: otp.trim(),
         type: authType,
         purpose: 'login',
@@ -96,7 +105,7 @@ export default function LoginPage() {
 
     try {
       const response = await loginWithPassword({
-        identifier: identifier.trim(),
+        identifier: getFormattedIdentifier(),
         password: password,
       });
       localStorage.setItem('token', response.token);
@@ -116,6 +125,17 @@ export default function LoginPage() {
     setStep('login');
     setOtp('');
     setMessage({ text: '', type: 'info' });
+  };
+
+  const handleFormSubmit = (e) => {
+    e.preventDefault();
+    if (step === 'otp') {
+      if (!loading && otp.length === 6) handleVerifyOTP(e);
+    } else if (loginMode === 'password') {
+      if (!loading && identifier && password) handlePasswordLogin(e);
+    } else {
+      if (!loading && identifier) handleSendOTP(e);
+    }
   };
 
   const msgColor =
@@ -171,7 +191,7 @@ export default function LoginPage() {
           </div>
         )}
 
-        <form className="space-y-5">
+        <form className="space-y-5" onSubmit={handleFormSubmit}>
           {/* Identifier always shown */}
           {step === 'login' && (
             <label className="block text-sm font-medium text-slate-700">
@@ -202,8 +222,7 @@ export default function LoginPage() {
                 />
               </label>
               <button
-                onClick={handlePasswordLogin}
-                type="button"
+                type="submit"
                 className="w-full rounded-2xl bg-[#4a7c23] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#3d6a1c] disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={loading || !identifier || !password}
               >
@@ -222,8 +241,7 @@ export default function LoginPage() {
           {/* OTP send mode */}
           {step === 'login' && loginMode === 'otp' && (
             <button
-              onClick={handleSendOTP}
-              type="button"
+              type="submit"
               className="w-full rounded-2xl bg-[#4a7c23] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#3d6a1c] disabled:opacity-50 disabled:cursor-not-allowed"
               disabled={loading || !identifier}
             >
@@ -260,8 +278,7 @@ export default function LoginPage() {
               </label>
 
               <button
-                onClick={handleVerifyOTP}
-                type="button"
+                type="submit"
                 className="w-full rounded-2xl bg-[#4a7c23] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#3d6a1c] disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={loading || otp.length !== 6}
               >

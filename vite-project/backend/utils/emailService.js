@@ -1,106 +1,103 @@
 const nodemailer = require('nodemailer');
 
-const sendEmail = async (options) => {
-  try {
-    if (!process.env.EMAIL_USER || process.env.EMAIL_USER.includes('your_email@gmail.com')) {
-      console.log(`[MOCK EMAIL] To: ${options.email}\nSubject: ${options.subject}\nBody (HTML length): ${options.html?.length}`);
-      return { success: true, messageId: `mock_email_${Date.now()}` };
-    }
+// ── Create transporter (lazy singleton) ──────────────────────
+let _transporter = null;
 
-    // Create transporter
-    const transporter = nodemailer.createTransport({
-      host: process.env.EMAIL_HOST,
-      port: process.env.EMAIL_PORT,
-      secure: process.env.EMAIL_SECURE === 'true',
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
-      }
-    });
+const getTransporter = () => {
+  if (_transporter) return _transporter;
 
-    // Define email options
-    const mailOptions = {
-      from: `"Abhivriddhi Organics" <${process.env.EMAIL_USER}>`,
-      to: options.email,
-      subject: options.subject,
-      html: options.html
-    };
+  const user = process.env.EMAIL_USER;
+  const pass = process.env.EMAIL_PASS;
 
-    // Send email
-    const info = await transporter.sendMail(mailOptions);
-    console.log('Email sent successfully:', info.messageId);
-
-    return {
-      success: true,
-      messageId: info.messageId
-    };
-  } catch (error) {
-    console.error('Email sending failed:', error);
-    throw new Error('Email could not be sent');
+  if (!user || user.includes('your_email') || !pass || pass.includes('your_app_password')) {
+    return null; // not configured
   }
+
+  _transporter = nodemailer.createTransport({
+    host:   process.env.EMAIL_HOST   || 'smtp.gmail.com',
+    port:   parseInt(process.env.EMAIL_PORT) || 587,
+    secure: process.env.EMAIL_SECURE === 'true',
+    auth: { user, pass }
+  });
+  return _transporter;
 };
 
+// ── Core send ─────────────────────────────────────────────────
+const sendEmail = async ({ email, subject, html, attachments = [] }) => {
+  const transporter = getTransporter();
+
+  if (!transporter) {
+    console.log(`\n[MOCK EMAIL] To: ${email} | Subject: ${subject}`);
+    return { success: true, messageId: `mock_${Date.now()}` };
+  }
+
+  const info = await transporter.sendMail({
+    from: `"Abhivriddhi Organics 🌱" <${process.env.EMAIL_USER}>`,
+    to: email,
+    subject,
+    html,
+    attachments
+  });
+
+  console.log(`✅ Email sent to ${email} | messageId: ${info.messageId}`);
+  return { success: true, messageId: info.messageId };
+};
+
+// ── OTP Email ─────────────────────────────────────────────────
 const sendOTPByEmail = async (email, otp, purpose = 'verification') => {
-  const subject = `Your OTP for ${purpose === 'registration' ? 'Registration' : purpose === 'login' ? 'Login' : 'Verification'} - Abhivriddhi Organics`;
+  const label = purpose === 'registration' ? 'Registration'
+    : purpose === 'login' ? 'Login' : 'Verification';
+  const subject = `${otp} — Your OTP for ${label} | Abhivriddhi Organics`;
 
-  const html = `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <meta charset="utf-8">
-      <title>OTP Verification</title>
-      <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .header { background: linear-gradient(135deg, #1a3d0c, #2d5a1f); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
-        .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
-        .otp-box { background: white; border: 2px solid #1a3d0c; border-radius: 8px; padding: 20px; text-align: center; margin: 20px 0; }
-        .otp-code { font-size: 32px; font-weight: bold; color: #1a3d0c; letter-spacing: 5px; }
-        .footer { text-align: center; margin-top: 30px; color: #666; font-size: 14px; }
-        .warning { color: #d9534f; font-weight: bold; }
-      </style>
-    </head>
-    <body>
-      <div class="container">
-        <div class="header">
-          <h1>🫘 Abhivriddhi Organics</h1>
-          <p>100% Organic • Gluten Free • Chemical Free</p>
-        </div>
-        <div class="content">
-          <h2>OTP Verification</h2>
-          <p>Hello,</p>
-          <p>Your One-Time Password (OTP) for ${purpose === 'registration' ? 'account registration' : purpose === 'login' ? 'secure login' : 'account verification'} is:</p>
-
-          <div class="otp-box">
-            <div class="otp-code">${otp}</div>
-          </div>
-
-          <p><strong>This OTP will expire in ${process.env.OTP_EXPIRE_MINUTES || 10} minutes.</strong></p>
-          <p>If you didn't request this OTP, please ignore this email.</p>
-
-          <div class="footer">
-            <p class="warning">⚠️ Do not share this OTP with anyone for security reasons.</p>
-            <p>Thank you for choosing Abhivriddhi Organics!</p>
-            <p>🌱 Pure • Natural • Traditional</p>
-          </div>
-        </div>
+  const html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body { font-family: Arial, sans-serif; background: #f1f5f9; margin: 0; padding: 20px; }
+    .card { max-width: 500px; margin: 0 auto; background: #fff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,.08); }
+    .header { background: linear-gradient(135deg,#1a3d0c,#4a7c23); color: #fff; padding: 32px 28px; text-align: center; }
+    .header h1 { margin: 0; font-size: 22px; }
+    .header p { margin: 6px 0 0; opacity: .8; font-size: 13px; }
+    .body { padding: 32px 28px; }
+    .otp-box { background: #f0fdf4; border: 2px dashed #4a7c23; border-radius: 12px; text-align: center; padding: 24px; margin: 20px 0; }
+    .otp-code { font-size: 40px; font-weight: 900; letter-spacing: 10px; color: #1a3d0c; }
+    .expire { font-size: 13px; color: #64748b; margin-top: 8px; }
+    .warning { background: #fff7ed; border-left: 4px solid #f97316; padding: 12px 16px; border-radius: 0 8px 8px 0; font-size: 13px; color: #9a3412; margin-top: 20px; }
+    .footer { background: #f8fafc; text-align: center; padding: 18px; font-size: 12px; color: #94a3b8; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="header">
+      <h1>🫘 Abhivriddhi Organics</h1>
+      <p>Your ${label} OTP</p>
+    </div>
+    <div class="body">
+      <p style="color:#374151">Hello! Your One-Time Password for <strong>${label}</strong> is:</p>
+      <div class="otp-box">
+        <div class="otp-code">${otp}</div>
+        <div class="expire">⏱ Valid for ${process.env.OTP_EXPIRE_MINUTES || 10} minutes</div>
       </div>
-    </body>
-    </html>
-  `;
+      <div class="warning">⚠️ <strong>Never share this OTP</strong> with anyone. Abhivriddhi Organics will never ask for your OTP.</div>
+    </div>
+    <div class="footer">🌱 Pure • Natural • Traditional | Abhivriddhi Organics</div>
+  </div>
+</body>
+</html>`;
 
   console.log(`\n============================`);
-  console.log(`[DEVELOPER OTP] For ${email}: ${otp}`);
+  console.log(`[EMAIL OTP] To: ${email} | Code: ${otp} | Purpose: ${label}`);
   console.log(`============================\n`);
 
-  return await sendEmail({
-    email,
-    subject,
-    html
-  });
+  return await sendEmail({ email, subject, html });
 };
 
-module.exports = {
-  sendEmail,
-  sendOTPByEmail
+// ── Invoice Email ─────────────────────────────────────────────
+const sendInvoiceEmail = async (email, order, invoiceHtml) => {
+  const orderId = String(order._id).slice(-8).toUpperCase();
+  const subject = `✅ Order Confirmed — INV-${orderId} | Abhivriddhi Organics`;
+  return await sendEmail({ email, subject, html: invoiceHtml });
 };
+
+module.exports = { sendEmail, sendOTPByEmail, sendInvoiceEmail };
