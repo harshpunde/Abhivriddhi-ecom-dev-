@@ -1,6 +1,80 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, NavLink } from 'react-router-dom';
+import { User, Package, Ticket, Zap, Wallet, MapPin, Heart, Gift, Bell, LogOut, ChevronDown, ChevronUp } from 'lucide-react';
+import { getCurrentUser } from '../../services/api';
 import './Navbar.css';
+
+// ─── User Dropdown Component ──────────────────────────────────
+function UserDropdown({ userName, onLogout }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const menuItems = [
+    { icon: <User size={16} />, label: 'My Profile', link: '/dashboard' },
+    { icon: <Package size={16} />, label: 'Orders', link: '/dashboard' },
+    { icon: <Ticket size={16} />, label: 'Coupons', link: '#' },
+    { icon: <Zap size={16} />, label: 'Supercoin', link: '#' },
+    { icon: <Wallet size={16} />, label: 'Saved Cards & Wallet', link: '#' },
+    { icon: <MapPin size={16} />, label: 'Saved Addresses', link: '#' },
+    { icon: <Heart size={16} />, label: 'Wishlist', link: '#' },
+    { icon: <Gift size={16} />, label: 'Gift Cards', link: '#' },
+    { icon: <Bell size={16} />, label: 'Notifications', link: '#' },
+  ];
+
+  return (
+    <div className="relative inline-block text-left" ref={dropdownRef}>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center gap-2 nav-link font-semibold transition hover:text-[#4a7c23]"
+      >
+        <User size={20} />
+        {userName}
+        {isOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+      </button>
+
+      {isOpen && (
+        <div className="absolute right-0 mt-2 w-64 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none z-50">
+          <div className="py-2 px-2 space-y-1">
+            <div className="px-4 py-2 text-sm font-bold text-slate-500 border-b border-slate-100 mb-2">
+              Your Account
+            </div>
+            {menuItems.map((item, index) => (
+              <NavLink
+                key={index}
+                to={item.link}
+                onClick={() => setIsOpen(false)}
+                className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 hover:text-[#4a7c23] rounded-md transition"
+              >
+                <div className="text-slate-400">{item.icon}</div>
+                <span className="font-medium">{item.label}</span>
+              </NavLink>
+            ))}
+            <button
+              onClick={() => {
+                setIsOpen(false);
+                onLogout();
+              }}
+              className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-red-50 hover:text-red-600 rounded-md transition mt-1 border-t border-slate-100"
+            >
+              <div className="text-slate-400 group-hover:text-red-500"><LogOut size={16} /></div>
+              <span className="font-medium">Logout</span>
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 // ─── Announcement Bar ─────────────────────────────────────────
 function AnnouncementBar() {
@@ -25,7 +99,7 @@ function AnnouncementBar() {
 }
 
 // ─── Cart Drawer ──────────────────────────────────────────────
-function CartDrawer({ open, onClose, items, onUpdate, onRemove }) {
+function CartDrawer({ open, onClose, items, onUpdate, onRemove, onCheckout }) {
   const total = items.reduce((sum, i) => sum + i.price * i.qty, 0);
 
   useEffect(() => {
@@ -85,7 +159,7 @@ function CartDrawer({ open, onClose, items, onUpdate, onRemove }) {
                 <span>₹{total}/-</span>
               </div>
               <p className="cart-note">Shipping &amp; taxes calculated at checkout</p>
-              <button className="nav-btn-primary cart-checkout">Proceed to Checkout</button>
+              <button className="nav-btn-primary cart-checkout" onClick={onCheckout}>Proceed to Checkout</button>
               <button className="nav-btn-secondary" onClick={onClose}>Continue Shopping</button>
             </div>
           </>
@@ -104,6 +178,40 @@ export default function Navbar({ cartCount = 0, onCartClick, cartItems = [], onC
   const handleCartOpen = () => {
     if (onCartClick) onCartClick();
     else setCartOpen(true);
+  };
+
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [userName, setUserName] = useState('');
+
+  useEffect(() => {
+    const fetchAuth = async () => {
+      const token = localStorage.getItem('token');
+      if (token) {
+        setIsAuthenticated(true);
+        try {
+          const userObj = await getCurrentUser();
+          if (userObj && userObj.user && userObj.user.name) {
+            setUserName(userObj.user.name.split(' ')[0]); // Show first name
+          } else {
+            setUserName('User');
+          }
+        } catch (error) {
+          console.error("Failed to fetch user:", error);
+          setUserName('User');
+        }
+      } else {
+        setIsAuthenticated(false);
+        setUserName('');
+      }
+    };
+    
+    fetchAuth();
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    setIsAuthenticated(false);
+    navigate('/login');
   };
 
   return (
@@ -127,6 +235,16 @@ export default function Navbar({ cartCount = 0, onCartClick, cartItems = [], onC
           <div className={`navbar-links ${mobileOpen ? 'open' : ''}`}>
             <NavLink to="/products" className={({ isActive }) => `nav-link ${isActive ? 'nav-link-active' : ''}`}>Products</NavLink>
             <NavLink to="/makings" className={({ isActive }) => `nav-link ${isActive ? 'nav-link-active' : ''}`}>Makings</NavLink>
+            
+            {isAuthenticated ? (
+              <UserDropdown userName={userName || 'Account'} onLogout={handleLogout} />
+            ) : (
+              <>
+                <NavLink to="/login" className={({ isActive }) => `nav-link ${isActive ? 'nav-link-active' : ''}`}>Login</NavLink>
+                <NavLink to="/signup" className="nav-btn-primary" style={{ padding: '8px 16px', borderRadius: '8px', fontSize: '14px', textDecoration: 'none', marginLeft: '8px' }}>Sign Up</NavLink>
+              </>
+            )}
+
             <button className="cart-btn" onClick={handleCartOpen} aria-label="Open cart">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <circle cx="9" cy="21" r="1" /><circle cx="20" cy="21" r="1" />
@@ -148,6 +266,10 @@ export default function Navbar({ cartCount = 0, onCartClick, cartItems = [], onC
           items={cartItems}
           onUpdate={onCartUpdate || (() => {})}
           onRemove={onCartRemove || (() => {})}
+          onCheckout={() => {
+            setCartOpen(false);
+            navigate('/checkout');
+          }}
         />
       )}
     </>

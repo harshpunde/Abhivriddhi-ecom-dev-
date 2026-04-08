@@ -28,6 +28,8 @@ import Terms from './components/TermsAndConditions/Terms';
 import CartPage from './components/CartPage';
 import LoginPage from './components/LoginPage';
 import SignupPage from './components/SignupPage';
+import Dashboard from './components/Dashboard/Dashboard';
+import CheckoutPage from './components/CheckoutPage/CheckoutPage';
 
 function App() {
   return (
@@ -40,6 +42,8 @@ function App() {
           <Route path="/cart" element={<CartPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/checkout" element={<CheckoutPage />} />
           <Route path="/terms" element={<Terms />} />   
         </Routes>
       </BrowserRouter>
