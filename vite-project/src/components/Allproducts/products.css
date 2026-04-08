@@ -106,6 +106,8 @@
   color: #333;
   transition: border-color 0.2s, background 0.2s;
   font-family: 'Inter', system-ui, sans-serif;
+  overflow: hidden;
+  white-space: nowrap;
 }
 
 .filter-dropdown-btn:hover,
@@ -117,6 +119,9 @@
 .filter-label-text {
   flex: 1;
   text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-right: 4px;
 }
 
 .chevron {
@@ -129,13 +134,17 @@
 }
 
 .filter-options {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  width: 100%;
+  z-index: 50;
   list-style: none;
   background: #fff;
   border: 1px solid #e8e8e8;
   border-radius: 9px;
   overflow: hidden;
-  margin-top: 4px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
   animation: slideDown 0.18s ease;
 }
 
@@ -430,6 +439,19 @@
   .sidebar {
     width: 100%;
     position: static;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 12px;
+    padding: 16px;
+  }
+
+  .sidebar-header {
+    grid-column: 1 / -1;
+    margin-bottom: 2px;
+  }
+
+  .filter-dropdown {
+    margin-bottom: 0;
   }
 
   .product-grid {

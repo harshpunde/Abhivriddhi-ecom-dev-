@@ -84,7 +84,7 @@ function Sidebar({ availability, setAvailability, sortBy, setSortBy, category, s
       />
 
       <FilterDropdown
-        label="Products Category"
+        label="Category"
         value={category}
         options={CATEGORIES.map(c => ({ value: c === 'All' ? 'all' : c, label: c }))}
         onChange={setCategory}

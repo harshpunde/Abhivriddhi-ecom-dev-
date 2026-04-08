@@ -9,7 +9,7 @@ export function HeroSection() {
         <img
           src="/images/hero-farmer.jpg"
           alt="Farmer in wheat field"
-          className="w-full h-full object-cover object-center"
+          className="w-full h-full object-cover object-[center_30%]"
         />
 
         {/* Gradient Overlay */}

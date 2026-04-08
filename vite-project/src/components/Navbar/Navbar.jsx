@@ -100,6 +100,7 @@ function AnnouncementBar() {
 
 // ─── Cart Drawer ──────────────────────────────────────────────
 function CartDrawer({ open, onClose, items, onUpdate, onRemove, onCheckout }) {
+<<<<<<< HEAD
   const total = items.reduce((sum, i) => sum + i.price * i.qty, 0);
   const navigate = useNavigate();
 
@@ -114,6 +115,10 @@ function CartDrawer({ open, onClose, items, onUpdate, onRemove, onCheckout }) {
       }
     }, 80);
   };
+=======
+  const total = items.reduce((sum, i) => sum + (i.totalPrice || ((i.unitPrice || i.price) * i.qty)), 0);
+  const totalCount = items.reduce((sum, i) => sum + i.qty, 0);
+>>>>>>> 830f1a3 (todo changes)
 
   useEffect(() => {
     document.body.style.overflow = open ? 'hidden' : '';
@@ -125,9 +130,9 @@ function CartDrawer({ open, onClose, items, onUpdate, onRemove, onCheckout }) {
       <div className={`cart-overlay ${open ? 'visible' : ''}`} onClick={onClose} />
       <aside className={`cart-drawer ${open ? 'open' : ''}`}>
         <div className="cart-header">
-          <h2>Your Cart</h2>
+          <h2>YOUR CART ({items.length})</h2>
           <button className="cart-close" onClick={onClose} aria-label="Close cart">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#222" strokeWidth="1.5">
               <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
             </svg>
           </button>
@@ -140,44 +145,116 @@ function CartDrawer({ open, onClose, items, onUpdate, onRemove, onCheckout }) {
               <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
             </svg>
             <p>Your cart is empty</p>
-            <button className="nav-btn-primary" onClick={onClose}>Continue Shopping</button>
+            <button className="nav-btn-primary" onClick={onClose} style={{ marginTop: '10px' }}>Continue Shopping</button>
           </div>
         ) : (
           <>
-            <div className="cart-items">
-              {items.map(item => (
-                <div key={item.id} className="cart-item">
-                  <img src={item.img} alt={item.name} className="cart-item-img" />
-                  <div className="cart-item-info">
-                    <p className="cart-item-name">{item.name}</p>
-                    <p className="cart-item-price">₹{item.price}/-</p>
-                    <div className="qty-control">
-                      <button onClick={() => onUpdate(item.id, item.qty - 1)}>−</button>
-                      <span>{item.qty}</span>
-                      <button onClick={() => onUpdate(item.id, item.qty + 1)}>+</button>
+            <div className="cart-promo-banner">
+              🎫 Get 10% OFF on orders above ₹3000 | Use code - TBOF10
+            </div>
+
+            <div className="cart-scroll-area">
+              <div className="shipping-progress">
+                <p className="shipping-text">Add <strong>₹1,275</strong> more to unlock <strong>FREE Shipping + 10% OFF</strong> 🎉</p>
+                <div className="progress-bar-container">
+                  <div className="progress-bar-fill" style={{ width: '45%' }}></div>
+                </div>
+                <div className="progress-milestones">
+                  <div className="milestone achieved">
+                    <div className="milestone-icon">✓</div>
+                    <div className="milestone-labels"><span>₹1499</span><span>Free Shipping</span></div>
+                  </div>
+                  <div className="milestone pending">
+                    <div className="milestone-icon">✓</div>
+                    <div className="milestone-labels"><span>₹3000</span><span>10% OFF</span></div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="cart-items">
+                {items.map(item => (
+                  <div key={`${item.id}-${item.weight}`} className="cart-item">
+                    <img src={item.img} alt={item.name} className="cart-item-img" />
+                    <div className="cart-item-info">
+                      <div className="cart-item-header-row">
+                        <p className="cart-item-name">{item.name}</p>
+                        <button className="remove-btn" onClick={() => onRemove(item.id, item.weight)} aria-label="Remove item">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#999" strokeWidth="2">
+                            <polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14H6L5 6" />
+                            <path d="M10 11v6" /><path d="M14 11v6" /><path d="M9 6V4h6v2" />
+                          </svg>
+                        </button>
+                      </div>
+                      <p className="cart-item-weight">{item.weight}</p>
+                      <p className="cart-item-price">₹{((item.unitPrice || item.price) * item.qty).toFixed(0)}</p>
+                      <div className="qty-control">
+                        <button onClick={() => onUpdate(item.id, item.weight, item.qty - 1)}>−</button>
+                        <span>{item.qty}</span>
+                        <button onClick={() => onUpdate(item.id, item.weight, item.qty + 1)}>+</button>
+                      </div>
                     </div>
                   </div>
-                  <button className="remove-btn" onClick={() => onRemove(item.id)} aria-label="Remove item">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14H6L5 6" />
-                      <path d="M10 11v6" /><path d="M14 11v6" /><path d="M9 6V4h6v2" />
-                    </svg>
-                  </button>
-                </div>
-              ))}
-            </div>
-            <div className="cart-footer">
-              <div className="cart-total">
-                <span>Subtotal</span>
-                <span>₹{total}/-</span>
+                ))}
               </div>
+<<<<<<< HEAD
               <p className="cart-note">Shipping &amp; taxes calculated at checkout</p>
               <button className="nav-btn-primary cart-checkout" onClick={handleCheckout}>Proceed to Checkout</button>
               <button className="nav-btn-secondary" onClick={onClose}>Continue Shopping</button>
+=======
+
+              <div className="cart-coupons">
+                <div className="coupon-row">
+                  <span className="coupon-icon">💚</span>
+                  <div className="coupon-text">
+                    <strong>Save ₹173</strong>
+                    <span>with 'TBOF10'</span>
+                  </div>
+                  <button className="btn-coupon-apply">Apply</button>
+                </div>
+                <div className="coupon-more">
+                  <div className="coupon-more-left">
+                    <span className="coupon-icon">💰</span>
+                    <span className="more-text">+2 more offers</span>
+                  </div>
+                  <button className="btn-view-coupons">View all coupons &gt;</button>
+                </div>
+              </div>
+
+              <div className="cart-upsells">
+                <div className="upsell-tabs">
+                  <button>Best offers</button>
+                  <button className="active">You might also like</button>
+                </div>
+                <div className="upsell-dummy-grid">
+                  <div className="upsell-dummy-card">
+                    <div className="upsell-discount">12% OFF</div>
+                    <img src={items[0]?.img || ''} alt="related" />
+                    <p className="upsell-title">Khapli Wheat Atta</p>
+                    <p className="upsell-price">₹2,278</p>
+                  </div>
+                  <div className="upsell-dummy-card">
+                    <div className="upsell-discount">10% OFF</div>
+                    <img src={items[0]?.img || ''} alt="related" />
+                    <p className="upsell-title">A2 Ghee (Gir Cow)</p>
+                    <p className="upsell-price">₹1,199</p>
+                  </div>
+                </div>
+              </div>
             </div>
+
+            <div className="cart-footer">
+              <div className="prepaid-offer">⚡ Extra discount with prepaid payment</div>
+              <button className="cart-checkout-btn" onClick={onCheckout}>
+                <span className="checkout-lbl">Checkout</span>
+                <span className="checkout-amt">₹{total} →</span>
+              </button>
+              <div className="powered-by">Powered by <strong>shopflo</strong></div>
+>>>>>>> 830f1a3 (todo changes)
+            </div >
           </>
-        )}
-      </aside>
+        )
+}
+      </aside >
     </>
   );
 }
@@ -185,7 +262,7 @@ function CartDrawer({ open, onClose, items, onUpdate, onRemove, onCheckout }) {
 // ─── Navbar ───────────────────────────────────────────────────
 export default function Navbar({ cartCount = 0, onCartClick, cartItems = [], onCartUpdate, onCartRemove }) {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [cartOpen, setCartOpen]     = useState(false);
+  const [cartOpen, setCartOpen] = useState(false);
   const navigate = useNavigate();
 
   const handleCartOpen = () => {
@@ -217,7 +294,7 @@ export default function Navbar({ cartCount = 0, onCartClick, cartItems = [], onC
         setUserName('');
       }
     };
-    
+
     fetchAuth();
   }, []);
 
@@ -248,7 +325,7 @@ export default function Navbar({ cartCount = 0, onCartClick, cartItems = [], onC
           <div className={`navbar-links ${mobileOpen ? 'open' : ''}`}>
             <NavLink to="/products" className={({ isActive }) => `nav-link ${isActive ? 'nav-link-active' : ''}`}>Products</NavLink>
             <NavLink to="/makings" className={({ isActive }) => `nav-link ${isActive ? 'nav-link-active' : ''}`}>Makings</NavLink>
-            
+
             {isAuthenticated ? (
               <UserDropdown userName={userName || 'Account'} onLogout={handleLogout} />
             ) : (
@@ -277,8 +354,8 @@ export default function Navbar({ cartCount = 0, onCartClick, cartItems = [], onC
           open={cartOpen}
           onClose={() => setCartOpen(false)}
           items={cartItems}
-          onUpdate={onCartUpdate || (() => {})}
-          onRemove={onCartRemove || (() => {})}
+          onUpdate={onCartUpdate || (() => { })}
+          onRemove={onCartRemove || (() => { })}
           onCheckout={() => {
             setCartOpen(false);
             navigate('/checkout');

@@ -69,6 +69,20 @@ export default function ProductDetail() {
   const [activeThumb, setActiveThumb]       = useState(0);
   const [addedToCart, setAddedToCart]       = useState(false);
 
+  // Weight multiplier
+  const getWeightMultiplier = (weight) => {
+    switch (weight) {
+      case '500gm': return 1;
+      case '750gm': return 1.5;
+      case '1Kg': return 2;
+      default: return 1;
+    }
+  };
+
+  const multiplier = getWeightMultiplier(selectedWeight);
+  const unitPrice = product ? product.price * multiplier : 0;
+  const totalPrice = unitPrice * qty;
+
   if (!product) {
     return (
       <div className="pd-wrapper">
@@ -82,19 +96,33 @@ export default function ProductDetail() {
     );
   }
 
-  // Related products: same category, different id, max 3
+  // Related products: same category, different id, max 4
   const related = PRODUCTS_DATA
     .filter(p => p.category === product.category && p.id !== product.id)
-    .slice(0, 3);
+    .slice(0, 4);
 
   const handleAddToCart = () => {
-    for (let i = 0; i < qty; i++) addToCart(product);
+    const baseItem = {
+      ...product,
+      weight: selectedWeight,
+      unitPrice
+    };
+    for (let i = 0; i < qty; i++) {
+      addToCart(baseItem);
+    }
     setAddedToCart(true);
     setTimeout(() => setAddedToCart(false), 1200);
   };
 
   const handleCheckout = () => {
-    for (let i = 0; i < qty; i++) addToCart(product);
+    const baseItem = {
+      ...product,
+      weight: selectedWeight,
+      unitPrice
+    };
+    for (let i = 0; i < qty; i++) {
+      addToCart(baseItem);
+    }
     setCartOpen(true);
   };
 
@@ -183,7 +211,7 @@ export default function ProductDetail() {
                   onClick={() => setQty(q => Math.max(1, q - 1))}
                   aria-label="Decrease quantity"
                 >
-                  +
+                  −
                 </button>
                 <span className="pd-qty-val">{qty}</span>
                 <button
@@ -191,13 +219,22 @@ export default function ProductDetail() {
                   onClick={() => setQty(q => q + 1)}
                   aria-label="Increase quantity"
                 >
-                  −
+                  +
                 </button>
               </div>
             </div>
 
-            {/* Price */}
-            <p className="pd-price">Price: ₹{product.price}/-</p>
+            {/* Dynamic Unit Price */}
+            <div className="pd-section">
+              <p className="pd-label">Unit Price</p>
+              <p className="pd-price">₹{unitPrice.toFixed(0)} /- per {selectedWeight}</p>
+            </div>
+
+            {/* Total Price */}
+            <div className="pd-section">
+              <p className="pd-label">Total Price</p>
+              <p className="pd-total-price">₹{totalPrice.toFixed(0)}</p>
+            </div>
 
             {/* Actions */}
             <div className="pd-actions">
