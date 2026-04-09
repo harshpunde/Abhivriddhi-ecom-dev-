@@ -319,7 +319,7 @@ export default function CheckoutPage() {
               {i > 0 && <div className={`co-step-line ${step.state === 'active' ? 'done' : ''}`} />}
               <div className={`co-step ${step.state}`}>
                 <div className="co-step-dot">{step.state === 'done' ? '✓' : i + 1}</div>
-                <span style={{ display: window.innerWidth < 500 ? 'none' : undefined }}>{step.label}</span>
+                <span>{step.label}</span>
               </div>
             </div>
           ))}

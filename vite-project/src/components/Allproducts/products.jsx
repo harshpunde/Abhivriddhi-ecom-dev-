@@ -165,63 +165,48 @@ export default function AllProducts() {
   }, [availability, sortBy, category]);
 
   return (
-    <div className="page-wrapper">
-      <Navbar cartCount={totalItems} onCartClick={() => setCartOpen(true)} />
+    <main className="main-content">
+      <div className="page-header">
+        <h1 className="page-title">
+          {category === 'all' ? 'All Products' : category}
+        </h1>
+        <p className="page-subtitle">Our Products</p>
+      </div>
 
-      <CartDrawer
-        open={cartOpen}
-        onClose={() => setCartOpen(false)}
-        items={cartItems}
-        onUpdate={updateQty}
-        onRemove={removeFromCart}
-        onCheckout={() => navigate('/checkout')}
-      />
+      <div className="products-layout">
+        <Sidebar
+          availability={availability} setAvailability={setAvailability}
+          sortBy={sortBy}             setSortBy={setSortBy}
+          category={category}         setCategory={setCategory}
+          onClear={clearFilters}
+        />
 
-      <main className="main-content">
-        <div className="page-header">
-          <h1 className="page-title">
-            {category === 'all' ? 'All Products' : category}
-          </h1>
-          <p className="page-subtitle">Our Products</p>
-        </div>
+        <section className="products-section">
+          <div className="products-meta">
+            <span className="online-customers">
+              <span className="online-dot" />
+              Online Customers: {onlineCount}
+            </span>
+            <span className="product-count">{filteredProducts.length} Products</span>
+          </div>
 
-        <div className="products-layout">
-          <Sidebar
-            availability={availability} setAvailability={setAvailability}
-            sortBy={sortBy}             setSortBy={setSortBy}
-            category={category}         setCategory={setCategory}
-            onClear={clearFilters}
-          />
-
-          <section className="products-section">
-            <div className="products-meta">
-              <span className="online-customers">
-                <span className="online-dot" />
-                Online Customers: {onlineCount}
-              </span>
-              <span className="product-count">{filteredProducts.length} Products</span>
+          {filteredProducts.length === 0 ? (
+            <div className="no-products">
+              <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#ccc" strokeWidth="1.5">
+                <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+              <p>No products match your filters.</p>
+              <button className="btn-primary" onClick={clearFilters}>Clear Filters</button>
             </div>
-
-            {filteredProducts.length === 0 ? (
-              <div className="no-products">
-                <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#ccc" strokeWidth="1.5">
-                  <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
-                </svg>
-                <p>No products match your filters.</p>
-                <button className="btn-primary" onClick={clearFilters}>Clear Filters</button>
-              </div>
-            ) : (
-              <div className="product-grid">
-                {filteredProducts.map(product => (
-                  <ProductCard key={product.id} product={product} />
-                ))}
-              </div>
-            )}
-          </section>
-        </div>
-      </main>
-
-      <Footer />
-    </div>
+          ) : (
+            <div className="product-grid">
+              {filteredProducts.map(product => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
+          )}
+        </section>
+      </div>
+    </main>
   );
 }

@@ -100,7 +100,7 @@ export default function SignupPage() {
       : 'bg-blue-50 border border-blue-200 text-blue-700';
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-green-50 flex items-center justify-center py-16 px-4">
+    <div className="py-20 px-4 flex items-center justify-center bg-slate-50/50">
       <div className="w-full max-w-md rounded-3xl bg-white p-10 shadow-xl shadow-slate-200">
 
         {/* Header */}

@@ -16,7 +16,7 @@ async function testMongoDB() {
     }
 
     await mongoose.connect(process.env.MONGODB_URI, {
-      serverSelectionTimeoutMS: 5000, // Timeout after 5s instead of 30s
+      serverSelectionTimeoutMS: 2000, // Timeout after 5s instead of 30s
     });
 
     console.log('✅ MongoDB connected successfully!');
