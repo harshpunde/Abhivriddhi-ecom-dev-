@@ -18,7 +18,7 @@ export function HeroSection() {
 
       {/* Centered Content */}
       <div className="relative max-w-[1600px] mx-auto px-6 h-full flex items-center justify-center text-center">
-        
+
         <div className="max-w-xl">
 
           {/* Tagline */}
@@ -30,7 +30,7 @@ export function HeroSection() {
 
           {/* Description */}
           <p className="text-white/90 text-sm md:text-base mb-6 leading-relaxed">
-            Abhivriddhi Organics, rooted in Jabalpur, crafts pure, chemical-free flours 
+            Abhivriddhi Organics, rooted in Jabalpur, crafts pure, chemical-free flours
             inspired by India’s timeless food wisdom.
           </p>
 
