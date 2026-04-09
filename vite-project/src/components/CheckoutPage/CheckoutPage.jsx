@@ -276,18 +276,6 @@ export default function CheckoutPage() {
   return (
     <div style={{ minHeight: '100vh', background: '#f1f5f9', fontFamily: "'Inter',system-ui,sans-serif" }}>
 
-      {/* Top bar */}
-      <div style={{ background: '#fff', borderBottom: '1px solid #e2e8f0', padding: '16px 24px', display: 'flex', alignItems: 'center', gap: 16, position: 'sticky', top: 0, zIndex: 100, boxShadow: '0 1px 8px rgba(0,0,0,.05)' }}>
-        <button onClick={() => navigate(-1)} style={{ background: 'none', border: '1.5px solid #e2e8f0', borderRadius: 10, padding: '6px 14px', cursor: 'pointer', color: '#374151', fontWeight: 600, fontSize: 14 }}>
-          ← Back
-        </button>
-        <div>
-          <h1 style={{ margin: 0, fontSize: 20, fontWeight: 800, color: '#1e293b' }}>Shipping & Payment</h1>
-          <p style={{ margin: 0, fontSize: 13, color: '#94a3b8' }}>Fill your details to place the order</p>
-        </div>
-        <div style={{ marginLeft: 'auto', fontSize: 13, color: '#4a7c23', fontWeight: 600 }}>🔒 100% Secure</div>
-      </div>
-
       {/* Body — two column */}
       <div style={{ maxWidth: 1100, margin: '0 auto', padding: '32px 20px', display: 'grid', gridTemplateColumns: 'minmax(0,1.6fr) minmax(0,1fr)', gap: 28, alignItems: 'start' }}>
 

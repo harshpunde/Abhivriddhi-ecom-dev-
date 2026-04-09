@@ -108,94 +108,41 @@ export default function ProductDetail() {
     setTimeout(() => setAddedToCart(false), 1200);
   };
 
-  const handleCheckout = () => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      navigate('/login', { state: { from: '/checkout' } });
-      return;
-    }
-    const baseItem = { ...product, weight: selectedWeight, unitPrice };
-    for (let i = 0; i < qty; i++) addToCart(baseItem);
-    setCartOpen(true);
-  };
-
   // Thumbnail images (use same image for demo — replace with real variants)
   const thumbnails = [product.img, product.img];
 
   return (
-    <div className="pd-wrapper">
-      <Navbar cartCount={totalItems} onCartClick={() => setCartOpen(true)} />
-
-      <CartDrawer
-        open={cartOpen}
-        onClose={() => setCartOpen(false)}
-        items={cartItems}
-        onUpdate={updateQty}
-        onRemove={removeFromCart}
-        onCheckout={() => {
-          setCartOpen(false);
-          navigate('/checkout');
-        }}
-      />
-
-      <main className="pd-main">
+    <main className="pd-main">
         {/* ── Breadcrumb ── */}
         <nav className="pd-breadcrumb">
           <button onClick={() => navigate('/')}>All Products</button>
           <span>/</span>
-          <span>{product.name}</span>
+          <span>{product.category}</span>
+          <span>/</span>
+          <span className="current">{product.name}</span>
         </nav>
 
-        {/* ── Product Section ── */}
-        <div className="pd-content">
-          {/* Left – Image Gallery */}
-          <div className="pd-gallery">
-            <div className="pd-main-img-wrap">
-              <img src={thumbnails[activeThumb]} alt={product.name} className="pd-main-img" />
-            </div>
-            <div className="pd-thumbnails">
-              {thumbnails.map((thumb, i) => (
-                <button
-                  key={i}
-                  className={`pd-thumb ${activeThumb === i ? 'active' : ''}`}
-                  onClick={() => setActiveThumb(i)}
-                >
-                  <img src={thumb} alt={`${product.name} view ${i + 1}`} />
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Right – Product Info */}
-          <div className="pd-info">
-            <h1 className="pd-name">{product.name}</h1>
-            <hr className="pd-divider" />
-
-            {/* Accordions */}
-            <Accordion title="Description">
-              <p>{product.description}</p>
-            </Accordion>
-            <Accordion title="Shipping Information">
-              <p>{SHIPPING_INFO}</p>
-            </Accordion>
-
-            {/* Weight Selector */}
-            <div className="pd-section">
-              <p className="pd-label">Weight</p>
-              <div className="pd-weights">
-                {WEIGHT_OPTIONS.map(w => (
+        <div className="pd-container">
+          {/* Main Product Info */}
+          <div className="pd-main-grid">
+            {/* Left: Gallery */}
+            <div className="pd-gallery">
+              <div className="pd-main-img-container">
+                <img src={thumbnails[activeThumb]} alt={product.name} className="pd-main-img" />
+              </div>
+              <div className="pd-thumbnails">
+                {thumbnails.map((img, idx) => (
                   <button
-                    key={w}
-                    className={`pd-weight-btn ${selectedWeight === w ? 'selected' : ''}`}
-                    onClick={() => setSelectedWeight(w)}
+                    key={idx}
+                    className={`thumb-btn ${activeThumb === idx ? 'active' : ''}`}
+                    onClick={() => setActiveThumb(idx)}
                   >
-                    {w}
+                    <img src={img} alt="thumbnail" />
                   </button>
                 ))}
               </div>
             </div>
 
-            {/* Quantity */}
             <div className="pd-section">
               <p className="pd-label">Quantity</p>
               <div className="pd-qty">
@@ -265,8 +212,5 @@ export default function ProductDetail() {
           </section>
         )}
       </main>
-
-      <Footer />
-    </div>
   );
 }

@@ -77,7 +77,7 @@ function UserDropdown({ userName, onLogout }) {
 }
 
 // ─── Announcement Bar ─────────────────────────────────────────
-function AnnouncementBar() {
+export function AnnouncementBar() {
   const items = [
     '100% Organic',
     'Gluten Free',
