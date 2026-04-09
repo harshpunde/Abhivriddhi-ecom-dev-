@@ -1,10 +1,11 @@
 import { useRef, useState, useCallback } from "react"
-import { Link } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 import { useCart } from "../../context/CartContext"
 import { PRODUCTS_DATA } from "../../data/products"
 
 export function ProductsSection() {
   const scrollRef = useRef(null)
+  const navigate = useNavigate()
   const { addToCart } = useCart()
   const [addedId, setAddedId] = useState(null)
   const [isDragging, setIsDragging] = useState(false)
@@ -37,6 +38,11 @@ export function ProductsSection() {
 
   /* ── Add to cart with feedback ── */
   const handleAdd = (product) => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      navigate('/login');
+      return;
+    }
     addToCart({ id: product.id, name: product.name, price: product.price, img: product.img })
     setAddedId(product.id)
     setTimeout(() => setAddedId(null), 1200)

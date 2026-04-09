@@ -256,6 +256,11 @@ export default function Navbar({ cartCount = 0, onCartClick, cartItems = [], onC
   const navigate = useNavigate();
 
   const handleCartOpen = () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      navigate('/login');
+      return;
+    }
     if (onCartClick) onCartClick();
     else setCartOpen(true);
   };

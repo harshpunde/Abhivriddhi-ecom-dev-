@@ -103,6 +103,11 @@ function ProductCard({ product }) {
 
   const handleAdd = (e) => {
     e.stopPropagation(); // prevent card click from firing
+    const token = localStorage.getItem('token');
+    if (!token) {
+      navigate('/login');
+      return;
+    }
     setAdding(true);
     addToCart(product);
     setTimeout(() => setAdding(false), 800);
@@ -166,7 +171,14 @@ export default function AllProducts() {
 
   return (
     <div className="page-wrapper">
-      <Navbar cartCount={totalItems} onCartClick={() => setCartOpen(true)} />
+      <Navbar cartCount={totalItems} onCartClick={() => {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          navigate('/login');
+        } else {
+          setCartOpen(true);
+        }
+      }} />
 
       <CartDrawer
         open={cartOpen}
