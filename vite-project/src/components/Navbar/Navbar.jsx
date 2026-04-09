@@ -100,9 +100,9 @@ function AnnouncementBar() {
 
 // ─── Cart Drawer ──────────────────────────────────────────────
 function CartDrawer({ open, onClose, items, onUpdate, onRemove, onCheckout }) {
-<<<<<<< HEAD
-  const total = items.reduce((sum, i) => sum + i.price * i.qty, 0);
   const navigate = useNavigate();
+  const total = items.reduce((sum, i) => sum + (i.totalPrice || ((i.unitPrice || i.price) * i.qty)), 0);
+  const totalCount = items.reduce((sum, i) => sum + i.qty, 0);
 
   const handleCheckout = () => {
     onClose();
@@ -115,10 +115,6 @@ function CartDrawer({ open, onClose, items, onUpdate, onRemove, onCheckout }) {
       }
     }, 80);
   };
-=======
-  const total = items.reduce((sum, i) => sum + (i.totalPrice || ((i.unitPrice || i.price) * i.qty)), 0);
-  const totalCount = items.reduce((sum, i) => sum + i.qty, 0);
->>>>>>> 830f1a3 (todo changes)
 
   useEffect(() => {
     document.body.style.overflow = open ? 'hidden' : '';
@@ -145,14 +141,14 @@ function CartDrawer({ open, onClose, items, onUpdate, onRemove, onCheckout }) {
               <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
             </svg>
             <p>Your cart is empty</p>
-            <button className="nav-btn-primary" onClick={onClose} style={{ marginTop: '10px' }}>Continue Shopping</button>
+            <button className="nav-btn-primary" onClick={onClose} style={{marginTop: '10px'}}>Continue Shopping</button>
           </div>
         ) : (
           <>
             <div className="cart-promo-banner">
               🎫 Get 10% OFF on orders above ₹3000 | Use code - TBOF10
             </div>
-
+            
             <div className="cart-scroll-area">
               <div className="shipping-progress">
                 <p className="shipping-text">Add <strong>₹1,275</strong> more to unlock <strong>FREE Shipping + 10% OFF</strong> 🎉</p>
@@ -196,11 +192,6 @@ function CartDrawer({ open, onClose, items, onUpdate, onRemove, onCheckout }) {
                   </div>
                 ))}
               </div>
-<<<<<<< HEAD
-              <p className="cart-note">Shipping &amp; taxes calculated at checkout</p>
-              <button className="nav-btn-primary cart-checkout" onClick={handleCheckout}>Proceed to Checkout</button>
-              <button className="nav-btn-secondary" onClick={onClose}>Continue Shopping</button>
-=======
 
               <div className="cart-coupons">
                 <div className="coupon-row">
@@ -244,17 +235,16 @@ function CartDrawer({ open, onClose, items, onUpdate, onRemove, onCheckout }) {
 
             <div className="cart-footer">
               <div className="prepaid-offer">⚡ Extra discount with prepaid payment</div>
-              <button className="cart-checkout-btn" onClick={onCheckout}>
+              <p className="cart-note text-center text-xs text-slate-400 mb-2">Shipping &amp; taxes calculated at checkout</p>
+              <button className="cart-checkout-btn" onClick={handleCheckout}>
                 <span className="checkout-lbl">Checkout</span>
-                <span className="checkout-amt">₹{total} →</span>
+                <span className="checkout-amt">₹{total.toFixed(0)} →</span>
               </button>
               <div className="powered-by">Powered by <strong>shopflo</strong></div>
->>>>>>> 830f1a3 (todo changes)
-            </div >
+            </div>
           </>
-        )
-}
-      </aside >
+        )}
+      </aside>
     </>
   );
 }
@@ -262,7 +252,7 @@ function CartDrawer({ open, onClose, items, onUpdate, onRemove, onCheckout }) {
 // ─── Navbar ───────────────────────────────────────────────────
 export default function Navbar({ cartCount = 0, onCartClick, cartItems = [], onCartUpdate, onCartRemove }) {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [cartOpen, setCartOpen] = useState(false);
+  const [cartOpen, setCartOpen]     = useState(false);
   const navigate = useNavigate();
 
   const handleCartOpen = () => {
@@ -294,7 +284,7 @@ export default function Navbar({ cartCount = 0, onCartClick, cartItems = [], onC
         setUserName('');
       }
     };
-
+    
     fetchAuth();
   }, []);
 
@@ -325,7 +315,7 @@ export default function Navbar({ cartCount = 0, onCartClick, cartItems = [], onC
           <div className={`navbar-links ${mobileOpen ? 'open' : ''}`}>
             <NavLink to="/products" className={({ isActive }) => `nav-link ${isActive ? 'nav-link-active' : ''}`}>Products</NavLink>
             <NavLink to="/makings" className={({ isActive }) => `nav-link ${isActive ? 'nav-link-active' : ''}`}>Makings</NavLink>
-
+            
             {isAuthenticated ? (
               <UserDropdown userName={userName || 'Account'} onLogout={handleLogout} />
             ) : (
@@ -354,8 +344,8 @@ export default function Navbar({ cartCount = 0, onCartClick, cartItems = [], onC
           open={cartOpen}
           onClose={() => setCartOpen(false)}
           items={cartItems}
-          onUpdate={onCartUpdate || (() => { })}
-          onRemove={onCartRemove || (() => { })}
+          onUpdate={onCartUpdate || (() => {})}
+          onRemove={onCartRemove || (() => {})}
           onCheckout={() => {
             setCartOpen(false);
             navigate('/checkout');
