@@ -136,6 +136,7 @@ function ProductCard({ product }) {
 
 // ─── Main Page ────────────────────────────────────────────────
 export default function AllProducts() {
+  const navigate = useNavigate();
   const { cartItems, cartOpen, setCartOpen, updateQty, removeFromCart, totalItems } = useCart();
 
   const [availability, setAvailability] = useState('all');
