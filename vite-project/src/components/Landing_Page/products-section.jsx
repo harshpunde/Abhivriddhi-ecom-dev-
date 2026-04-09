@@ -38,11 +38,6 @@ export function ProductsSection() {
 
   /* ── Add to cart with feedback ── */
   const handleAdd = (product) => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      navigate('/login');
-      return;
-    }
     addToCart({ id: product.id, name: product.name, price: product.price, img: product.img })
     setAddedId(product.id)
     setTimeout(() => setAddedId(null), 1200)
@@ -63,7 +58,7 @@ export function ProductsSection() {
         <div style={styles.trackWrapper}>
           {/* Left Arrow */}
           <button style={{ ...styles.sideArrow, left: "8px" }} onClick={() => scroll(-1)} aria-label="Scroll left">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
           </button>
 
           <div
@@ -80,44 +75,44 @@ export function ProductsSection() {
                 {!product.inStock && <span style={styles.badge}>Out of Stock</span>}
                 {product.inStock && i < 3 && <span style={{ ...styles.badge, background: "linear-gradient(135deg,#f59e0b,#d97706)" }}>Bestseller</span>}
 
-              {/* Image */}
-              <div style={styles.imgWrap}>
-                <img
-                  src={product.img}
-                  alt={product.name}
-                  style={styles.img}
-                  draggable={false}
-                />
-              </div>
+                {/* Image */}
+                <div style={styles.imgWrap}>
+                  <img
+                    src={product.img}
+                    alt={product.name}
+                    style={styles.img}
+                    draggable={false}
+                  />
+                </div>
 
-              {/* Info */}
-              <div style={styles.cardBody}>
-                <span style={styles.category}>{product.category}</span>
-                <h3 style={styles.name}>{product.name}</h3>
-                <p style={styles.desc}>{product.description}</p>
-                <div style={styles.footer}>
-                  <span style={styles.price}>₹{product.price}</span>
-                  <button
-                    style={{
-                      ...styles.addBtn,
-                      ...(addedId === product.id ? styles.addedBtn : {}),
-                      ...(product.inStock ? {} : styles.disabledBtn),
-                    }}
-                    onMouseDown={(e) => e.stopPropagation()}  // ← don't start drag on button click
-                    onClick={() => product.inStock && handleAdd(product)}
-                    disabled={!product.inStock}
-                  >
-                    {addedId === product.id ? "✓ Added" : product.inStock ? "Add to Cart" : "Sold Out"}
-                  </button>
+                {/* Info */}
+                <div style={styles.cardBody}>
+                  <span style={styles.category}>{product.category}</span>
+                  <h3 style={styles.name}>{product.name}</h3>
+                  <p style={styles.desc}>{product.description}</p>
+                  <div style={styles.footer}>
+                    <span style={styles.price}>₹{product.price}</span>
+                    <button
+                      style={{
+                        ...styles.addBtn,
+                        ...(addedId === product.id ? styles.addedBtn : {}),
+                        ...(product.inStock ? {} : styles.disabledBtn),
+                      }}
+                      onMouseDown={(e) => e.stopPropagation()}  // ← don't start drag on button click
+                      onClick={() => product.inStock && handleAdd(product)}
+                      disabled={!product.inStock}
+                    >
+                      {addedId === product.id ? "✓ Added" : product.inStock ? "Add to Cart" : "Sold Out"}
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))}
           </div>
 
           {/* Right Arrow */}
           <button style={{ ...styles.sideArrow, right: "8px" }} onClick={() => scroll(1)} aria-label="Scroll right">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
           </button>
         </div>
 

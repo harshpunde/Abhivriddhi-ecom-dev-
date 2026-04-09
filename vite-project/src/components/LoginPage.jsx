@@ -1,9 +1,11 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { sendOTP, verifyOTP, loginWithPassword } from '../services/api';
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const redirectTo = location.state?.from || '/';
   const [identifier, setIdentifier] = useState('');
   const [otp, setOtp] = useState('');
   const [step, setStep] = useState('login'); // 'login' | 'otp'
@@ -84,7 +86,7 @@ export default function LoginPage() {
         localStorage.setItem('user', JSON.stringify(response.user));
       }
       setSuccess('Login successful! Redirecting...');
-      setTimeout(() => navigate('/'), 1000);
+      setTimeout(() => navigate(redirectTo), 1000);
     } catch (error) {
       setError(error.message || 'OTP verification failed. Please try again.');
     }
@@ -113,7 +115,7 @@ export default function LoginPage() {
         localStorage.setItem('user', JSON.stringify(response.user));
       }
       setSuccess('Login successful! Redirecting...');
-      setTimeout(() => navigate('/'), 1000);
+      setTimeout(() => navigate(redirectTo), 1000);
     } catch (error) {
       setError(error.message || 'Login failed. Please check your credentials.');
     }

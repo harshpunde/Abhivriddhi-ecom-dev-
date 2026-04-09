@@ -105,8 +105,13 @@ function CartDrawer({ open, onClose, items, onUpdate, onRemove, onCheckout }) {
   const totalCount = items.reduce((sum, i) => sum + i.qty, 0);
 
   const handleCheckout = () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      onClose();
+      setTimeout(() => navigate('/login', { state: { from: '/checkout' } }), 80);
+      return;
+    }
     onClose();
-    // Small timeout so the drawer close animation doesn't block navigation
     setTimeout(() => {
       if (typeof onCheckout === 'function') {
         onCheckout();
@@ -256,11 +261,6 @@ export default function Navbar({ cartCount = 0, onCartClick, cartItems = [], onC
   const navigate = useNavigate();
 
   const handleCartOpen = () => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      navigate('/login');
-      return;
-    }
     if (onCartClick) onCartClick();
     else setCartOpen(true);
   };

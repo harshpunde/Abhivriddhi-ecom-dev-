@@ -30,11 +30,6 @@ function RelatedCard({ product }) {
 
   const handleAdd = (e) => {
     e.stopPropagation();
-    const token = localStorage.getItem('token');
-    if (!token) {
-      navigate('/login');
-      return;
-    }
     setAdding(true);
     addToCart(product);
     setTimeout(() => setAdding(false), 800);
@@ -107,19 +102,8 @@ export default function ProductDetail() {
     .slice(0, 4);
 
   const handleAddToCart = () => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      navigate('/login');
-      return;
-    }
-    const baseItem = {
-      ...product,
-      weight: selectedWeight,
-      unitPrice
-    };
-    for (let i = 0; i < qty; i++) {
-      addToCart(baseItem);
-    }
+    const baseItem = { ...product, weight: selectedWeight, unitPrice };
+    for (let i = 0; i < qty; i++) addToCart(baseItem);
     setAddedToCart(true);
     setTimeout(() => setAddedToCart(false), 1200);
   };
@@ -127,17 +111,11 @@ export default function ProductDetail() {
   const handleCheckout = () => {
     const token = localStorage.getItem('token');
     if (!token) {
-      navigate('/login');
+      navigate('/login', { state: { from: '/checkout' } });
       return;
     }
-    const baseItem = {
-      ...product,
-      weight: selectedWeight,
-      unitPrice
-    };
-    for (let i = 0; i < qty; i++) {
-      addToCart(baseItem);
-    }
+    const baseItem = { ...product, weight: selectedWeight, unitPrice };
+    for (let i = 0; i < qty; i++) addToCart(baseItem);
     setCartOpen(true);
   };
 
@@ -146,14 +124,7 @@ export default function ProductDetail() {
 
   return (
     <div className="pd-wrapper">
-      <Navbar cartCount={totalItems} onCartClick={() => {
-        const token = localStorage.getItem('token');
-        if (!token) {
-          navigate('/login');
-        } else {
-          setCartOpen(true);
-        }
-      }} />
+      <Navbar cartCount={totalItems} onCartClick={() => setCartOpen(true)} />
 
       <CartDrawer
         open={cartOpen}
