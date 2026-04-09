@@ -146,14 +146,14 @@ function CartDrawer({ open, onClose, items, onUpdate, onRemove, onCheckout }) {
               <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
             </svg>
             <p>Your cart is empty</p>
-            <button className="nav-btn-primary" onClick={onClose} style={{marginTop: '10px'}}>Continue Shopping</button>
+            <button className="nav-btn-primary" onClick={onClose} style={{ marginTop: '10px' }}>Continue Shopping</button>
           </div>
         ) : (
           <>
             <div className="cart-promo-banner">
               🎫 Get 10% OFF on orders above ₹3000 | Use code - TBOF10
             </div>
-            
+
             <div className="cart-scroll-area">
               <div className="shipping-progress">
                 <p className="shipping-text">Add <strong>₹1,275</strong> more to unlock <strong>FREE Shipping + 10% OFF</strong> 🎉</p>
@@ -257,7 +257,7 @@ function CartDrawer({ open, onClose, items, onUpdate, onRemove, onCheckout }) {
 // ─── Navbar ───────────────────────────────────────────────────
 export default function Navbar({ cartCount = 0, onCartClick, cartItems = [], onCartUpdate, onCartRemove }) {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [cartOpen, setCartOpen]     = useState(false);
+  const [cartOpen, setCartOpen] = useState(false);
   const navigate = useNavigate();
 
   const handleCartOpen = () => {
@@ -289,7 +289,7 @@ export default function Navbar({ cartCount = 0, onCartClick, cartItems = [], onC
         setUserName('');
       }
     };
-    
+
     fetchAuth();
   }, []);
 
@@ -305,22 +305,15 @@ export default function Navbar({ cartCount = 0, onCartClick, cartItems = [], onC
       <nav className="navbar">
         <div className="navbar-inner">
           <button className="navbar-logo" onClick={() => navigate('/')} aria-label="Go to home">
-            <span className="logo-hindi">अभिवृद्धि</span>
-            <span className="logo-en">Organics</span>
-          </button>
-
-          <button
-            className="hamburger"
-            onClick={() => setMobileOpen(!mobileOpen)}
-            aria-label="Toggle menu"
-          >
-            <span /><span /><span />
+            {/* <span className="logo-hindi">अभिवृद्धि</span>
+            <span className="logo-en">Organics</span> */}
+            <img src="images/logoImage.png" alt="" />
           </button>
 
           <div className={`navbar-links ${mobileOpen ? 'open' : ''}`}>
             <NavLink to="/products" className={({ isActive }) => `nav-link ${isActive ? 'nav-link-active' : ''}`}>Products</NavLink>
             <NavLink to="/makings" className={({ isActive }) => `nav-link ${isActive ? 'nav-link-active' : ''}`}>Makings</NavLink>
-            
+
             {isAuthenticated ? (
               <UserDropdown userName={userName || 'Account'} onLogout={handleLogout} />
             ) : (
@@ -329,7 +322,9 @@ export default function Navbar({ cartCount = 0, onCartClick, cartItems = [], onC
                 <NavLink to="/signup" className="nav-btn-primary" style={{ padding: '8px 16px', borderRadius: '8px', fontSize: '14px', textDecoration: 'none', marginLeft: '8px' }}>Sign Up</NavLink>
               </>
             )}
+          </div>
 
+          <div className="navbar-actions">
             <button className="cart-btn" onClick={handleCartOpen} aria-label="Open cart">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <circle cx="9" cy="21" r="1" /><circle cx="20" cy="21" r="1" />
@@ -338,6 +333,14 @@ export default function Navbar({ cartCount = 0, onCartClick, cartItems = [], onC
               {cartCount > 0 && (
                 <span className="cart-badge">{cartCount}</span>
               )}
+            </button>
+
+            <button
+              className="hamburger"
+              onClick={() => setMobileOpen(!mobileOpen)}
+              aria-label="Toggle menu"
+            >
+              <span /><span /><span />
             </button>
           </div>
         </div>
@@ -349,8 +352,8 @@ export default function Navbar({ cartCount = 0, onCartClick, cartItems = [], onC
           open={cartOpen}
           onClose={() => setCartOpen(false)}
           items={cartItems}
-          onUpdate={onCartUpdate || (() => {})}
-          onRemove={onCartRemove || (() => {})}
+          onUpdate={onCartUpdate || (() => { })}
+          onRemove={onCartRemove || (() => { })}
           onCheckout={() => {
             setCartOpen(false);
             navigate('/checkout');

@@ -32,11 +32,11 @@ export function FeaturesSection() {
             <div
               key={index}
               className="bg-[#2f6f0f] hover:bg-[#27610c] transition duration-300 
-              text-white rounded-2xl p-8 min-h-[240px] flex flex-col justify-between"
+              text-white rounded-2xl p-8 min-h-[240px] flex flex-col"
             >
               
               {/* Icon + Title */}
-              <div className="flex items-center gap-3 mb-5">
+              <div className="flex items-center gap-3 mb-8 h-12">
                 <feature.icon className="w-6 h-6 text-white/90" />
                 <h3 className="text-xl font-semibold tracking-wide">
                   {feature.title}

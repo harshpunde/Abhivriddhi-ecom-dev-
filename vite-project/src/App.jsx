@@ -27,12 +27,12 @@ function MainLayout({ children }) {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Navbar 
-        cartCount={totalItems} 
-        onCartClick={handleCartClick} 
+      <Navbar
+        cartCount={totalItems}
+        onCartClick={handleCartClick}
       />
-      
-      <main className="flex-grow">
+
+      <main className="flex-grow mt-[40px]">
         {children}
       </main>
 
@@ -47,7 +47,7 @@ function MainLayout({ children }) {
           navigate('/checkout');
         }}
       />
-      
+
       <Footer />
     </div>
   );

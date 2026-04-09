@@ -2,14 +2,14 @@ import { Button } from "../ui/button.jsx"
 
 export function HeroSection() {
   return (
-    <section className="relative h-[85vh] min-h-[500px] overflow-hidden">
+    <section className="relative h-[100vh] min-h-[500px] overflow-hidden pt-12">
 
       {/* Background Image */}
       <div className="absolute inset-0">
         <img
-          src="/images/hero-farmer.jpg"
+          src="images/hero-farmer.jpg"
           alt="Farmer in wheat field"
-          className="w-full h-full object-cover object-[center_30%]"
+          className="w-full h-full object-cover object-[center_20%]"
         />
 
         {/* Gradient Overlay */}
@@ -18,19 +18,19 @@ export function HeroSection() {
 
       {/* Centered Content */}
       <div className="relative max-w-[1600px] mx-auto px-6 h-full flex items-center justify-center text-center">
-        
+
         <div className="max-w-xl">
 
           {/* Tagline */}
-          <h1 className="text-3xl md:text-4xl lg:text-5xl font-semibold text-white mb-4 leading-tight">
+          <h1 className="text-3xl md:text-4xl lg:text-5xl font-semibold text-white mb-4 leading-tight font-jaini-purva">
             <span className="text-white/80">“</span>
-            शुद्धता सत्यता सनातनता
+            शुद्धम् सत्यम् सनातनम्
             <span className="text-white/80">”</span>
           </h1>
 
           {/* Description */}
           <p className="text-white/90 text-sm md:text-base mb-6 leading-relaxed">
-            Abhivriddhi Organics, rooted in Jabalpur, crafts pure, chemical-free flours 
+            Abhivriddhi Organics, rooted in Jabalpur, crafts pure, chemical-free flours
             inspired by India’s timeless food wisdom.
           </p>
 

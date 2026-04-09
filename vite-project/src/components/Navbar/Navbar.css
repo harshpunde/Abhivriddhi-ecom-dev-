@@ -79,14 +79,18 @@
 
 .navbar-logo {
   display: flex;
-  flex-direction: column;
+  align-items: center;
   text-decoration: none;
-  line-height: 1.1;
   background: none;
   border: none;
   cursor: pointer;
   padding: 0;
-  text-align: left;
+}
+
+.navbar-logo img {
+  height: 26px;  
+  width: auto;
+  object-fit: contain;
 }
 
 .logo-hindi {
@@ -188,14 +192,14 @@
   width: 97%;
   max-width: 1800px;
   margin: 0 auto;
-  padding: 20px 22px;
+  padding: 6px 16px;
 
   display: flex;
   align-items: center;
   justify-content: space-between;
 
-  background: rgba(0, 0, 0, 0.35);
-  backdrop-filter: blur(10px);
+  background: rgba(194, 193, 193, 0.35);
+  backdrop-filter: blur(0px);
   border-radius: 10px;
 }
 
@@ -203,7 +207,7 @@
 .logo-hindi {
   color: #fff;
   font-size: 18px;
-  font-weight: 700;
+
 }
 
 .logo-en {
@@ -211,11 +215,31 @@
   font-size: 12px;
 }
 
+
+.navbar-logo {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 18px 22px;
+}
+
+.navbar-logo img {
+  height: 56px;
+  font-weight: 500px;
+  width: auto;
+  object-fit: contain;
+}
+
 /* Links */
 .navbar-links {
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 30px;
+  margin-left: auto;
+  margin-right: 20px;
 }
 
 .nav-link {
@@ -255,6 +279,13 @@
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
+/* Actions (Cart + Hamburger) */
+.navbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
 /* Hamburger */
 .hamburger {
   display: none;
@@ -263,6 +294,7 @@
   background: none;
   border: none;
   cursor: pointer;
+  padding: 8px;
 }
 
 .hamburger span {
