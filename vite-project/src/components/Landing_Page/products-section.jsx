@@ -94,6 +94,7 @@ export function ProductsSection() {
                     alt={product.name}
                     style={styles.img}
                     draggable={false}
+                    loading="lazy"
                   />
                 </div>
 

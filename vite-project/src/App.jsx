@@ -1,21 +1,25 @@
 import { BrowserRouter, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
+import React, { Suspense, lazy } from 'react';
 import { CartProvider, useCart } from './context/CartContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Navbar, { CartDrawer } from './components/Navbar/Navbar';
 import Footer from './components/Footer/Footer';
-import LandingPage from './components/Landing_Page/LandingPage';
-import AllProducts from './components/Allproducts/products';
-import ProductDetail from './components/ProductDetail/ProductDetail';
-import Terms from './components/TermsAndConditions/Terms';
-import CartPage from './components/CartPage';
-import LoginPage from './components/LoginPage';
-import SignupPage from './components/SignupPage';
-import Dashboard from './components/Dashboard/Dashboard';
-import CheckoutPage from './components/CheckoutPage/CheckoutPage';
-import PrivacyPolicy from './components/Policies/PrivacyPolicy';
-import ShippingPolicy from './components/Policies/ShippingPolicy';
-import CancellationPolicy from './components/Policies/CancellationPolicy';
-import Makings from './components/Makings/Makings';
+
+// Lazy load components for performance
+const LandingPage = lazy(() => import('./components/Landing_Page/LandingPage'));
+const AllProducts = lazy(() => import('./components/Allproducts/products'));
+const ProductDetail = lazy(() => import('./components/ProductDetail/ProductDetail'));
+const Terms = lazy(() => import('./components/TermsAndConditions/Terms'));
+const CartPage = lazy(() => import('./components/CartPage'));
+const LoginPage = lazy(() => import('./components/LoginPage'));
+const SignupPage = lazy(() => import('./components/SignupPage'));
+const Profile = lazy(() => import('./components/Profile/Profile'));
+const CheckoutPage = lazy(() => import('./components/CheckoutPage/CheckoutPage'));
+const PrivacyPolicy = lazy(() => import('./components/Policies/PrivacyPolicy'));
+const ShippingPolicy = lazy(() => import('./components/Policies/ShippingPolicy'));
+const CancellationPolicy = lazy(() => import('./components/Policies/CancellationPolicy'));
+const Makings = lazy(() => import('./components/Makings/Makings'));
+const OrderHistory = lazy(() => import('./components/OrderHistory/OrderHistory'));
 
 function MainLayout({ children }) {
   const { cartItems, cartOpen, setCartOpen, updateQty, removeFromCart, totalItems } = useCart();
@@ -38,7 +42,13 @@ function MainLayout({ children }) {
       )}
 
       <main className={`flex-grow ${isCheckout ? '' : 'mt-[40px]'}`}>
-        {children}
+        <Suspense fallback={
+          <div className="flex h-screen items-center justify-center">
+            <div className="w-10 h-10 border-4 border-[#4a7c23]/20 border-t-[#4a7c23] rounded-full animate-spin"></div>
+          </div>
+        }>
+          {children}
+        </Suspense>
       </main>
 
       {!isCheckout && (
@@ -78,13 +88,14 @@ function App() {
               <Route path="/cart" element={<CartPage />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/signup" element={<SignupPage />} />
-              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/profile" element={<Profile />} />
               <Route path="/checkout" element={<CheckoutPage />} />
               <Route path="/terms" element={<Terms />} />
               <Route path="/privacy-policy" element={<PrivacyPolicy />} />
               <Route path="/shipping-policy" element={<ShippingPolicy />} />
               <Route path="/cancellation-policy" element={<CancellationPolicy />} />
               <Route path="/makings" element={<Makings />} />
+              <Route path="/orders" element={<OrderHistory />} />
             </Routes>
           </MainLayout>
         </BrowserRouter>

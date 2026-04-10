@@ -293,7 +293,7 @@ export default function CheckoutPage() {
           ⬇️ Download Invoice
         </a>
         <button onClick={() => navigate('/products')} className="co-success-btn outline">Continue Shopping</button>
-        <button onClick={() => navigate('/dashboard')} className="co-success-btn ghost">Track My Orders</button>
+        <button onClick={() => navigate('/orders')} className="co-success-btn ghost">Track My Orders</button>
       </div>
     </div>
   );

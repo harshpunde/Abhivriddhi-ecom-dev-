@@ -61,3 +61,36 @@ export const resetPassword = (payload) => request('/auth/reset-password', {
   method: 'POST',
   body: JSON.stringify(payload)
 });
+
+export const fetchMyOrders = () => request('/payment/my-orders');
+
+// User Profile & Address Management
+export const updateProfile = (payload) => request('/users/profile', {
+  method: 'PUT',
+  body: JSON.stringify(payload)
+});
+
+export const fetchAddresses = () => request('/users/addresses');
+
+export const addAddress = (payload) => request('/users/addresses', {
+  method: 'POST',
+  body: JSON.stringify(payload)
+});
+
+export const updateAddress = (id, payload) => request(`/users/addresses/${id}`, {
+  method: 'PUT',
+  body: JSON.stringify(payload)
+});
+
+export const deleteAddress = (id) => request(`/users/addresses/${id}`, {
+  method: 'DELETE'
+});
+
+export const deactivateAccount = () => request('/users/deactivate', {
+  method: 'PUT'
+});
+
+export const deleteAccount = () => request('/users/delete', {
+  method: 'DELETE'
+});
+
