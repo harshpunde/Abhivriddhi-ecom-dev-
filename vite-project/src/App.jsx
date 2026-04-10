@@ -4,6 +4,7 @@ import { CartProvider, useCart } from './context/CartContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Navbar, { CartDrawer } from './components/Navbar/Navbar';
 import Footer from './components/Footer/Footer';
+import ScrollToTop from './components/ScrollToTop';
 
 // Lazy load components for performance
 const LandingPage = lazy(() => import('./components/Landing_Page/LandingPage'));
@@ -80,6 +81,7 @@ function App() {
     <AuthProvider>
       <CartProvider>
         <BrowserRouter>
+          <ScrollToTop />
           <MainLayout>
             <Routes>
               <Route path="/" element={<LandingPage />} />
