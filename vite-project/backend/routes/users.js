@@ -31,6 +31,9 @@ router.get('/admin/data', async (req, res) => {
 // Validation rules
 const updateProfileValidation = [
   body('name').optional().trim().isLength({ min: 2, max: 50 }).withMessage('Name must be 2-50 characters'),
+  body('firstName').optional().trim().isLength({ max: 50 }),
+  body('lastName').optional().trim().isLength({ max: 50 }),
+  body('gender').optional().isIn(['Male', 'Female', 'Other']),
   body('email').optional().isEmail().normalizeEmail().withMessage('Please provide a valid email'),
   body('mobile').optional().matches(/^\+91[6-9]\d{9}$/).withMessage('Please provide a valid Indian mobile number (+91XXXXXXXXXX)')
 ];
@@ -59,7 +62,7 @@ router.put('/profile', protect, updateProfileValidation, async (req, res) => {
       });
     }
 
-    const { name, email, mobile } = req.body;
+    const { name, firstName, lastName, gender, email, mobile } = req.body;
     const userId = req.user._id;
 
     // Check if email or mobile is already taken by another user
@@ -83,6 +86,10 @@ router.put('/profile', protect, updateProfileValidation, async (req, res) => {
     // Update user
     const updateData = {};
     if (name) updateData.name = name;
+    if (firstName !== undefined) updateData.firstName = firstName;
+    if (lastName !== undefined) updateData.lastName = lastName;
+    if (gender) updateData.gender = gender;
+    
     if (email) {
       updateData.email = email;
       updateData.emailVerified = false; // Require re-verification
@@ -104,6 +111,9 @@ router.put('/profile', protect, updateProfileValidation, async (req, res) => {
       user: {
         id: user._id,
         name: user.name,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        gender: user.gender,
         email: user.email,
         mobile: user.mobile,
         isVerified: user.isVerified,
@@ -119,6 +129,35 @@ router.put('/profile', protect, updateProfileValidation, async (req, res) => {
       message: 'Profile update failed',
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
+  }
+});
+
+// @route   PUT /api/users/deactivate
+// @desc    Deactivate user account
+// @access  Private
+router.put('/deactivate', protect, async (req, res) => {
+  try {
+    const user = await User.findByIdAndUpdate(
+      req.user._id,
+      { status: 'Deactivated' },
+      { new: true }
+    );
+    res.json({ success: true, message: 'Account deactivated successfully' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Deactivation failed' });
+  }
+});
+
+// @route   DELETE /api/users/delete
+// @desc    Permanently delete user account
+// @access  Private
+router.delete('/delete', protect, async (req, res) => {
+  try {
+    await User.findByIdAndDelete(req.user._id);
+    // Note: You might want to delete orders or keep them as 'anonymous' depending on policy
+    res.json({ success: true, message: 'Account permanently deleted' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Deletion failed' });
   }
 });
 

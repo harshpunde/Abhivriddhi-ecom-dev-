@@ -245,6 +245,14 @@ router.post('/verify-otp', async (req, res) => {
       return res.status(404).json({ success: false, message: 'User not found. Please sign up first.' });
     }
 
+    // Check account status
+    if (user.status === 'Deactivated') {
+      return res.status(403).json({
+        success: false,
+        message: 'Your account has been deactivated. Please contact support to reactivate it.'
+      });
+    }
+
     if (purpose === 'registration') {
       if (type === 'email') user.emailVerified = true;
       else user.mobileVerified = true;
@@ -304,6 +312,14 @@ router.post('/login', async (req, res) => {
 
     if (!user) {
       return res.status(401).json({ success: false, message: 'Invalid credentials. Please check your email/mobile and password.' });
+    }
+
+    // Check account status
+    if (user.status === 'Deactivated') {
+      return res.status(403).json({
+        success: false,
+        message: 'Your account has been deactivated. Please contact support to reactivate it.'
+      });
     }
 
     // Check password

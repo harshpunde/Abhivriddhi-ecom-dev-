@@ -1,5 +1,6 @@
 // Server last updated: 2026-04-09T03:30 — Twilio SMS active
 const express = require('express');
+const compression = require('compression');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -12,6 +13,9 @@ const paymentRoutes = require('./routes/payment');
 const { initializeWhatsApp } = require('./utils/whatsappService');
 
 const app = express();
+
+// Use GZIP compression for faster data transfer
+app.use(compression());
 
 // Security middleware
 app.use(helmet());

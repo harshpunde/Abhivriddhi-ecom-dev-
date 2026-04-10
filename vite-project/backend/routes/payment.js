@@ -5,8 +5,29 @@ const Order = require('../models/Order');
 const { sendInvoiceEmail } = require('../utils/emailService');
 const { generateInvoiceHTML } = require('../utils/invoiceService');
 const { sendOrderConfirmationSMS } = require('../utils/smsService');
+const { protect } = require('../middleware/auth');
 
 const router = express.Router();
+
+
+// @route   GET /api/payment/my-orders
+// @desc    Get all orders for the logged-in user
+// @access  Private
+router.get('/my-orders', protect, async (req, res) => {
+  try {
+    const orders = await Order.find({ user: req.user._id })
+      .sort({ createdAt: -1 }); // Newest first
+
+    res.status(200).json({
+      success: true,
+      count: orders.length,
+      orders
+    });
+  } catch (error) {
+    console.error('Fetch my-orders error:', error);
+    res.status(500).json({ success: false, message: 'Server error while fetching orders' });
+  }
+});
 
 const razorpay = new Razorpay({
   key_id:     process.env.RAZORPAY_KEY_ID     || 'rzp_test_dummykey123456',

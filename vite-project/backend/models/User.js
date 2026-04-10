@@ -2,11 +2,30 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
 const userSchema = new mongoose.Schema({
+  firstName: {
+    type: String,
+    trim: true,
+    maxlength: [50, 'First name cannot be more than 50 characters']
+  },
+  lastName: {
+    type: String,
+    trim: true,
+    maxlength: [50, 'Last name cannot be more than 50 characters']
+  },
   name: {
     type: String,
     required: [true, 'Name is required'],
     trim: true,
     maxlength: [50, 'Name cannot be more than 50 characters']
+  },
+  gender: {
+    type: String,
+    enum: ['Male', 'Female', 'Other'],
+  },
+  status: {
+    type: String,
+    enum: ['Active', 'Deactivated'],
+    default: 'Active'
   },
   email: {
     type: String,
