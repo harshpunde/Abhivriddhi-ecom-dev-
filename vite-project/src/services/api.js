@@ -51,3 +51,13 @@ export const verifyPayment = (payload) => request('/payment/verify', {
   method: 'POST',
   body: JSON.stringify(payload)
 });
+
+export const forgotPassword = (payload) => request('/auth/forgot-password', {
+  method: 'POST',
+  body: JSON.stringify(payload)
+});
+
+export const resetPassword = (payload) => request('/auth/reset-password', {
+  method: 'POST',
+  body: JSON.stringify(payload)
+});

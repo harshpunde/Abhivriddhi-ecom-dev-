@@ -12,7 +12,7 @@
 
 .main-content {
   padding: 120px 24px 80px;
-  max-width: 1400px;
+  max-width: 1600px;
   margin: 0 auto;
   font-family: 'Inter', system-ui, sans-serif;
   background: #ffffff;
@@ -124,12 +124,19 @@
 
 .products-meta {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: center;
+  gap: 32px;
   margin-bottom: 24px;
 }
 
-
+.online-customers {
+  color: var(--meta-orange);
+  font-weight: 600;
+  font-size: 14px;
+  margin-right: auto;
+  margin-left: 20px;
+}
 
 .product-count {
   color: var(--meta-orange);
@@ -140,7 +147,7 @@
 /* ─── Grid ─────────────────────────────────────────────────── */
 .product-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 24px;
 }
 
@@ -204,8 +211,8 @@
 }
 
 .product-price {
-  font-size: 14px;
-  font-weight: 700;
+  font-size: 15px;
+  font-weight: 800;
   color: var(--text-main);
   margin-bottom: 12px;
 }

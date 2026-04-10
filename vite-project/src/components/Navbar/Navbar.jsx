@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate, NavLink } from 'react-router-dom';
 import { User, Package, Ticket, Zap, Wallet, MapPin, Heart, Gift, Bell, LogOut, ChevronDown, ChevronUp } from 'lucide-react';
 import { getCurrentUser } from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
 import './Navbar.css';
 
 // ─── User Dropdown Component ──────────────────────────────────
@@ -265,37 +266,11 @@ export default function Navbar({ cartCount = 0, onCartClick, cartItems = [], onC
     else setCartOpen(true);
   };
 
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [userName, setUserName] = useState('');
-
-  useEffect(() => {
-    const fetchAuth = async () => {
-      const token = localStorage.getItem('token');
-      if (token) {
-        setIsAuthenticated(true);
-        try {
-          const userObj = await getCurrentUser();
-          if (userObj && userObj.user && userObj.user.name) {
-            setUserName(userObj.user.name.split(' ')[0]); // Show first name
-          } else {
-            setUserName('User');
-          }
-        } catch (error) {
-          console.error("Failed to fetch user:", error);
-          setUserName('User');
-        }
-      } else {
-        setIsAuthenticated(false);
-        setUserName('');
-      }
-    };
-
-    fetchAuth();
-  }, []);
+  const { user, logout, isAuthenticated } = useAuth();
+  const userName = user?.name ? user.name.split(' ')[0] : 'Account';
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    setIsAuthenticated(false);
+    logout();
     navigate('/login');
   };
 

@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { CartProvider, useCart } from './context/CartContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import Navbar, { CartDrawer } from './components/Navbar/Navbar';
 import Footer from './components/Footer/Footer';
 import LandingPage from './components/Landing_Page/LandingPage';
@@ -24,12 +25,7 @@ function MainLayout({ children }) {
   const isCheckout = location.pathname === '/checkout';
 
   const handleCartClick = () => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      navigate('/login');
-    } else {
-      setCartOpen(true);
-    }
+    setCartOpen(true);
   };
 
   return (
@@ -54,7 +50,12 @@ function MainLayout({ children }) {
           onRemove={removeFromCart}
           onCheckout={() => {
             setCartOpen(false);
-            navigate('/checkout');
+            const token = localStorage.getItem('token');
+            if (!token) {
+              navigate('/login', { state: { from: '/checkout' } });
+            } else {
+              navigate('/checkout');
+            }
           }}
         />
       )}
@@ -66,27 +67,29 @@ function MainLayout({ children }) {
 
 function App() {
   return (
-    <CartProvider>
-      <BrowserRouter>
-        <MainLayout>
-          <Routes>
-            <Route path="/" element={<LandingPage />} />
-            <Route path="/products" element={<AllProducts />} />
-            <Route path="/product/:id" element={<ProductDetail />} />
-            <Route path="/cart" element={<CartPage />} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/signup" element={<SignupPage />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/checkout" element={<CheckoutPage />} />
-            <Route path="/terms" element={<Terms />} />
-            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-            <Route path="/shipping-policy" element={<ShippingPolicy />} />
-            <Route path="/cancellation-policy" element={<CancellationPolicy />} />
-            <Route path="/makings" element={<Makings />} />
-          </Routes>
-        </MainLayout>
-      </BrowserRouter>
-    </CartProvider>
+    <AuthProvider>
+      <CartProvider>
+        <BrowserRouter>
+          <MainLayout>
+            <Routes>
+              <Route path="/" element={<LandingPage />} />
+              <Route path="/products" element={<AllProducts />} />
+              <Route path="/product/:id" element={<ProductDetail />} />
+              <Route path="/cart" element={<CartPage />} />
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/signup" element={<SignupPage />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/checkout" element={<CheckoutPage />} />
+              <Route path="/terms" element={<Terms />} />
+              <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+              <Route path="/shipping-policy" element={<ShippingPolicy />} />
+              <Route path="/cancellation-policy" element={<CancellationPolicy />} />
+              <Route path="/makings" element={<Makings />} />
+            </Routes>
+          </MainLayout>
+        </BrowserRouter>
+      </CartProvider>
+    </AuthProvider>
   );
 }
 

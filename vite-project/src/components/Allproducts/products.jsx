@@ -200,9 +200,8 @@ export default function AllProducts() {
 
         <section className="products-section">
           <div className="products-meta">
-            <span className="product-count">
-              {filteredProducts.length} Products
-            </span>
+            <span className="online-customers">Online Customers: {Math.floor(Math.random() * 20) + 10}</span>
+            <span className="product-count">{filteredProducts.length} Products</span>
           </div>
 
           <div className="product-grid">

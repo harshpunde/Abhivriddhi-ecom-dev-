@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { registerUser, verifyOTP } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 export default function SignupPage() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { login } = useAuth();
   const redirectTo = location.state?.from || '/';
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -79,10 +81,7 @@ export default function SignupPage() {
         purpose: 'registration',
       });
 
-      localStorage.setItem('token', response.token);
-      if (response.user) {
-        localStorage.setItem('user', JSON.stringify(response.user));
-      }
+      login(response.token, response.user);
       setSuccess('Account verified! Welcome to Abhivriddhi Organics 🎉');
       setTimeout(() => navigate(redirectTo), 1200);
     } catch (error) {

@@ -203,6 +203,8 @@ export default function CheckoutPage() {
     if (!form.city.trim())                            e.city        = 'City is required';
     if (!form.state)                                  e.state       = 'Select your state';
     if (!/^\d{6}$/.test(form.pincode.trim()))         e.pincode     = 'Enter valid 6-digit pincode';
+    if (!form.email.trim())                            e.email       = 'Email is required';
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) e.email = 'Enter a valid email address';
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -356,8 +358,8 @@ export default function CheckoutPage() {
             </div>
 
             <div className="co-row1">
-              <FormField label="Email Address (for invoice & updates)" error={errors.email}>
-                <input className="co-input" type="email" name="email" value={form.email} onChange={onChange} placeholder="you@example.com" />
+              <FormField label="Email Address (for invoice & updates)" required error={errors.email}>
+                <input className={`co-input ${errors.email ? 'err' : ''}`} type="email" name="email" value={form.email} onChange={onChange} placeholder="priyanshu@gmail.com" />
               </FormField>
             </div>
 
