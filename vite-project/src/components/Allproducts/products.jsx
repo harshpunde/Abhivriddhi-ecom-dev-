@@ -1,12 +1,10 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './products.css';
 import { PRODUCTS_DATA, CATEGORIES } from '../../data/products';
 import { useCart } from '../../context/CartContext';
-import Navbar, { CartDrawer } from '../Navbar/Navbar';
-import Footer from '../Footer/Footer';
 
-// ─── Filter Dropdown ──────────────────────────────────────────
+// ─── Filter Dropdown (Polished for Figma) ─────────────────────
 function FilterDropdown({ label, value, options, onChange }) {
   const [open, setOpen] = useState(false);
   return (
@@ -15,11 +13,11 @@ function FilterDropdown({ label, value, options, onChange }) {
         className={`filter-dropdown-btn ${open ? 'active' : ''}`}
         onClick={() => setOpen(!open)}
       >
-        <span className="filter-label-text">{label}</span>
+        <span>{label}</span>
         <svg
-          className={`chevron ${open ? 'rotated' : ''}`}
+          style={{ transform: open ? 'rotate(180deg)' : 'rotate(0)' , transition: '0.2s' }}
           width="16" height="16" viewBox="0 0 24 24"
-          fill="none" stroke="currentColor" strokeWidth="2"
+          fill="none" stroke="currentColor" strokeWidth="2.5"
         >
           <polyline points="6 9 12 15 18 9" />
         </svg>
@@ -32,11 +30,6 @@ function FilterDropdown({ label, value, options, onChange }) {
                 className={`filter-option ${value === opt.value ? 'selected' : ''}`}
                 onClick={() => { onChange(opt.value); setOpen(false); }}
               >
-                {value === opt.value && (
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <polyline points="20 6 9 17 4 12" />
-                  </svg>
-                )}
                 {opt.label}
               </button>
             </li>
@@ -47,17 +40,12 @@ function FilterDropdown({ label, value, options, onChange }) {
   );
 }
 
-// ─── Filters Sidebar ──────────────────────────────────────────
+// ─── Filters Sidebar (Desktop) ────────────────────────────────
 function Sidebar({ availability, setAvailability, sortBy, setSortBy, category, setCategory, onClear }) {
-  const hasFilters = availability !== 'all' || sortBy !== 'default' || category !== 'all';
-
   return (
-    <aside className="sidebar">
+    <aside className="sidebar desktop-only">
       <div className="sidebar-header">
         <h3 className="sidebar-title">Filters</h3>
-        {hasFilters && (
-          <button className="clear-filters" onClick={onClear}>Clear all</button>
-        )}
       </div>
 
       <FilterDropdown
@@ -84,7 +72,7 @@ function Sidebar({ availability, setAvailability, sortBy, setSortBy, category, s
       />
 
       <FilterDropdown
-        label="Category"
+        label="Products Category"
         value={category}
         options={CATEGORIES.map(c => ({ value: c === 'All' ? 'all' : c, label: c }))}
         onChange={setCategory}
@@ -93,7 +81,7 @@ function Sidebar({ availability, setAvailability, sortBy, setSortBy, category, s
   );
 }
 
-// ─── Product Card ─────────────────────────────────────────────
+// ─── Product Card (Redesigned for Figma) ──────────────────────
 function ProductCard({ product }) {
   const navigate = useNavigate();
   const { addToCart, cartItems } = useCart();
@@ -112,22 +100,20 @@ function ProductCard({ product }) {
     <div
       className={`product-card ${!product.inStock ? 'out-of-stock' : ''}`}
       onClick={() => navigate(`/product/${product.id}`)}
-      style={{ cursor: 'pointer' }}
     >
-      {!product.inStock && <span className="badge-out">Out of Stock</span>}
       <div className="product-img-wrap">
-        <img src={product.img} alt={product.name} className="product-img" />
+        <img src={product.img} alt={product.name} className="product-img" loading="lazy" decoding="async" />
       </div>
       <div className="product-info">
         <h3 className="product-name">{product.name}</h3>
         <p className="product-desc">{product.description}</p>
         <p className="product-price">Price: ₹{product.price}/-</p>
         <button
-          className={`btn-add-cart ${adding ? 'adding' : ''} ${inCart ? 'in-cart' : ''}`}
+          className="btn-add-cart"
           onClick={handleAdd}
           disabled={!product.inStock}
         >
-          {adding ? '✓ Added!' : inCart ? 'Add More' : 'Add to cart'}
+          {adding ? '✓ Added!' : 'Add to cart'}
         </button>
       </div>
     </div>
@@ -136,13 +122,17 @@ function ProductCard({ product }) {
 
 // ─── Main Page ────────────────────────────────────────────────
 export default function AllProducts() {
-  const navigate = useNavigate();
-  const { cartItems, cartOpen, setCartOpen, updateQty, removeFromCart, totalItems } = useCart();
-
   const [availability, setAvailability] = useState('all');
   const [sortBy, setSortBy]             = useState('default');
   const [category, setCategory]         = useState('all');
   const [onlineCount]                   = useState(15);
+  const [isMobile, setIsMobile]         = useState(window.innerWidth <= 768);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const clearFilters = () => {
     setAvailability('all');
@@ -152,59 +142,78 @@ export default function AllProducts() {
 
   const filteredProducts = useMemo(() => {
     let list = [...PRODUCTS_DATA];
-
     if (availability === 'in-stock')     list = list.filter(p => p.inStock);
     if (availability === 'out-of-stock') list = list.filter(p => !p.inStock);
     if (category !== 'all')              list = list.filter(p => p.category === category);
-
     if (sortBy === 'price-asc')  list.sort((a, b) => a.price - b.price);
     if (sortBy === 'price-desc') list.sort((a, b) => b.price - a.price);
     if (sortBy === 'name-asc')   list.sort((a, b) => a.name.localeCompare(b.name));
-
     return list;
   }, [availability, sortBy, category]);
 
   return (
     <main className="main-content">
       <div className="page-header">
-        <h1 className="page-title">
-          {category === 'all' ? 'All Products' : category}
-        </h1>
+        <h1 className="page-title">All Products</h1>
         <p className="page-subtitle">Our Products</p>
       </div>
 
+      {isMobile && (
+        <div className="mobile-filters">
+          <FilterDropdown
+            label="Category"
+            value={category}
+            options={CATEGORIES.map(c => ({ value: c === 'All' ? 'all' : c, label: c }))}
+            onChange={setCategory}
+          />
+          <FilterDropdown
+            label="Sort By"
+            value={sortBy}
+            options={[
+              { value: 'default',    label: 'Default' },
+              { value: 'price-asc',  label: 'Price: Low' },
+              { value: 'price-desc', label: 'Price: High' },
+            ]}
+            onChange={setSortBy}
+          />
+          <FilterDropdown
+            label="Availability"
+            value={availability}
+            options={[
+              { value: 'all',  label: 'All' },
+              { value: 'in-stock', label: 'In Stock' },
+            ]}
+            onChange={setAvailability}
+          />
+        </div>
+      )}
+
       <div className="products-layout">
-        <Sidebar
-          availability={availability} setAvailability={setAvailability}
-          sortBy={sortBy}             setSortBy={setSortBy}
-          category={category}         setCategory={setCategory}
-          onClear={clearFilters}
-        />
+        {!isMobile && (
+          <Sidebar
+            availability={availability} setAvailability={setAvailability}
+            sortBy={sortBy}             setSortBy={setSortBy}
+            category={category}         setCategory={setCategory}
+            onClear={clearFilters}
+          />
+        )}
 
         <section className="products-section">
           <div className="products-meta">
-            <span className="online-customers">
-              <span className="online-dot" />
-              Online Customers: {onlineCount}
+            <span className="product-count">
+              {filteredProducts.length} Products
             </span>
-            <span className="product-count">{filteredProducts.length} Products</span>
           </div>
 
-          {filteredProducts.length === 0 ? (
-            <div className="no-products">
-              <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#ccc" strokeWidth="1.5">
-                <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
-              </svg>
-              <p>No products match your filters.</p>
-              <button className="btn-primary" onClick={clearFilters}>Clear Filters</button>
-            </div>
-          ) : (
-            <div className="product-grid">
-              {filteredProducts.map(product => (
-                <ProductCard key={product.id} product={product} />
-              ))}
-            </div>
-          )}
+          <div className="product-grid">
+            {filteredProducts.map(product => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+
+          <div className="load-more-container">
+            <button className="btn-load-more">Load more</button>
+          </div>
         </section>
       </div>
     </main>
