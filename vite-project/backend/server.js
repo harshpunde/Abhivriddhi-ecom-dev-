@@ -9,6 +9,7 @@ require('dotenv').config();
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
 const paymentRoutes = require('./routes/payment');
+const { initializeWhatsApp } = require('./utils/whatsappService');
 
 const app = express();
 
@@ -78,6 +79,9 @@ const PORT = process.env.PORT || 2000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
   console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  
+  // Initialize WhatsApp Bot
+  initializeWhatsApp();
 });
 
 module.exports = app;

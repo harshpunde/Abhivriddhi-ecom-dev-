@@ -4,6 +4,7 @@ const crypto = require('crypto');
 const Order = require('../models/Order');
 const { sendInvoiceEmail } = require('../utils/emailService');
 const { generateInvoiceHTML } = require('../utils/invoiceService');
+const { sendOrderConfirmationSMS } = require('../utils/smsService');
 
 const router = express.Router();
 
@@ -104,20 +105,28 @@ router.post('/verify', async (req, res) => {
         try {
           // 1. Send SMS
           const customerMobile = order.shippingAddress?.mobile;
+          console.log(`[DEBUG] Attempting to send SMS to: ${customerMobile}`);
           if (customerMobile) {
-            const { sendOrderConfirmationSMS } = require('../utils/smsService');
             await sendOrderConfirmationSMS(customerMobile, order._id);
           }
 
           // 2. Send Email Invoice
           const html = generateInvoiceHTML(order);
           const customerEmail = order.shippingAddress?.email;
+          console.log(`[DEBUG] Attempting to send Email to: ${customerEmail}`);
           if (customerEmail) {
-            await sendInvoiceEmail(customerEmail, order, html);
-            console.log(`✅ Invoice emailed to ${customerEmail}`);
+            const result = await sendInvoiceEmail(customerEmail, order, html);
+            console.log(`[DEBUG] sendInvoiceEmail result:`, result);
+            if (result.success) {
+              console.log(`✅ Invoice emailed to ${customerEmail}`);
+            } else {
+              console.error(`❌ Invoice email FAILED for ${customerEmail}:`, result.error);
+            }
+          } else {
+            console.warn('[DEBUG] No customer email found in order shipping address');
           }
         } catch (invoiceErr) {
-          console.error('Invoice/email/sms error (non-fatal):', invoiceErr.message);
+          console.error('[DEBUG] Invoice/email/sms exception:', invoiceErr);
         }
       })();
     }
@@ -147,7 +156,7 @@ router.get('/invoice/:orderId', async (req, res) => {
     const orderId = String(order._id).slice(-8).toUpperCase();
 
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
-    res.setHeader('Content-Disposition', `inline; filename="Invoice-INV-${orderId}.html"`);
+    res.setHeader('Content-Disposition', `attachment; filename="Invoice-INV-${orderId}.html"`);
     res.send(html);
 
   } catch (error) {

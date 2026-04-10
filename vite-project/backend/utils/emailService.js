@@ -13,12 +13,23 @@ const getTransporter = () => {
     return null; // not configured
   }
 
+  console.log(`[EMAIL] Initializing transporter with user: ${user}`);
   _transporter = nodemailer.createTransport({
     host:   process.env.EMAIL_HOST   || 'smtp.gmail.com',
     port:   parseInt(process.env.EMAIL_PORT) || 587,
     secure: process.env.EMAIL_SECURE === 'true',
     auth: { user, pass }
   });
+
+  // Verify connection immediately
+  _transporter.verify((error, success) => {
+    if (error) {
+      console.error('❌ EMAIL TRANSPORTER ERROR:', error.message);
+    } else {
+      console.log('✅ EMAIL TRANSPORTER READY (CONNECTED TO GMAIL)');
+    }
+  });
+
   return _transporter;
 };
 
@@ -31,16 +42,21 @@ const sendEmail = async ({ email, subject, html, attachments = [] }) => {
     return { success: true, messageId: `mock_${Date.now()}` };
   }
 
-  const info = await transporter.sendMail({
-    from: `"Abhivriddhi Organics 🌱" <${process.env.EMAIL_USER}>`,
-    to: email,
-    subject,
-    html,
-    attachments
-  });
+  try {
+    const info = await transporter.sendMail({
+      from: `"Abhivriddhi Organics 🌱" <${process.env.EMAIL_USER}>`,
+      to: email,
+      subject,
+      html,
+      attachments
+    });
 
-  console.log(`✅ Email sent to ${email} | messageId: ${info.messageId}`);
-  return { success: true, messageId: info.messageId };
+    console.log(`✅ Email sent to ${email} | messageId: ${info.messageId}`);
+    return { success: true, messageId: info.messageId };
+  } catch (err) {
+    console.error(`❌ FAILED to send email to ${email}:`, err.message);
+    return { success: false, error: err.message };
+  }
 };
 
 // ── OTP Email ─────────────────────────────────────────────────
@@ -93,11 +109,67 @@ const sendOTPByEmail = async (email, otp, purpose = 'verification') => {
   return await sendEmail({ email, subject, html });
 };
 
-// ── Invoice Email ─────────────────────────────────────────────
+// ── Order Confirmation Email ──────────────────────────────────
 const sendInvoiceEmail = async (email, order, invoiceHtml) => {
   const orderId = String(order._id).slice(-8).toUpperCase();
   const subject = `✅ Order Confirmed — INV-${orderId} | Abhivriddhi Organics`;
-  return await sendEmail({ email, subject, html: invoiceHtml });
+
+  const bodyHtml = `
+  <!DOCTYPE html>
+  <html>
+  <head>
+    <style>
+      body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
+      .container { max-width: 600px; margin: 20px auto; padding: 20px; border: 1px solid #eee; border-radius: 10px; }
+      .header { background: #4a7c23; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+      .content { padding: 20px; }
+      .order-details { background: #f9f9f9; padding: 15px; border-radius: 8px; margin: 20px 0; }
+      .footer { font-size: 12px; color: #777; text-align: center; margin-top: 20px; }
+      .btn { display: inline-block; background: #4a7c23; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; margin-top: 10px; }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>Order Confirmed! 🎉</h1>
+      </div>
+      <div class="content">
+        <p>Dear <strong>${order.shippingAddress?.fullName || 'Customer'}</strong>,</p>
+        <p>Thank you for choosing <strong>Abhivriddhi Organics</strong>. Your order has been successfully placed and is being processed.</p>
+        
+        <div class="order-details">
+          <p><strong>Order ID:</strong> #${orderId}</p>
+          <p><strong>Total Amount:</strong> ₹${order.totalAmount.toLocaleString('en-IN')}</p>
+          <p><strong>Delivery Address:</strong> ${order.shippingAddress?.city}, ${order.shippingAddress?.state}</p>
+        </div>
+
+        <p>Your official invoice is attached to this email as a <strong>Downloadable HTML file</strong>. You can open it in any browser and print it as a PDF if needed.</p>
+        
+        <p>If you have any questions, feel free to reply to this email or contact us at <strong>support@abhivriddhiorganics.com</strong>.</p>
+        
+        <p>Pure • Natural • Traditional</p>
+        <p><strong>Abhivriddhi Organics Team</strong> 🌱</p>
+      </div>
+      <div class="footer">
+        &copy; ${new Date().getFullYear()} Abhivriddhi Organics. All rights reserved.
+      </div>
+    </div>
+  </body>
+  </html>
+  `;
+
+  return await sendEmail({ 
+    email, 
+    subject, 
+    html: bodyHtml,
+    attachments: [
+      {
+        filename: `Invoice-INV-${orderId}.html`,
+        content: invoiceHtml,
+        contentType: 'text/html'
+      }
+    ]
+  });
 };
 
-module.exports = { sendEmail, sendOTPByEmail, sendInvoiceEmail };
+module.exports = { sendEmail, sendOTPByEmail, sendInvoiceEmail, getTransporter };

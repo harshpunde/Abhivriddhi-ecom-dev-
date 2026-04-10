@@ -123,6 +123,10 @@ const generateInvoiceHTML = (order) => {
       🌱 Pure • Natural • Traditional | support@abhivriddhiorganics.com
     </div>
   </div>
+  
+  <p class="no-print" style="text-align:center; font-size:12px; color:#94a3b8; margin-top:20px;">
+    This is an electronically generated document. No signature is required.
+  </p>
 </body>
 </html>`;
 };

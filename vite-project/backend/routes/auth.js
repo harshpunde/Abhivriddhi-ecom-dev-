@@ -372,4 +372,101 @@ router.post('/logout', protect, (req, res) => {
   res.json({ success: true, message: 'Logged out successfully' });
 });
 
+// @route   POST /api/auth/forgot-password
+// @desc    Send OTP for password reset
+// @access  Public
+router.post('/forgot-password', async (req, res) => {
+  try {
+    let { identifier, type } = req.body;
+    if (!identifier || !type) {
+      return res.status(400).json({ success: false, message: 'Identifier and type are required' });
+    }
+
+    identifier = normalizeIdentifier(identifier, type);
+    const user = await User.findOne(
+      type === 'email' ? { email: identifier } : { mobile: identifier }
+    );
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found. Please check your credentials.',
+      });
+    }
+
+    const otp = user.generateOTP(type);
+    await user.save();
+
+    // Send OTP
+    if (type === 'email') {
+      await sendOTPByEmail(identifier, otp, 'password-reset');
+    } else {
+      await sendOTPBySMS(identifier, otp, 'password-reset');
+    }
+
+    // Save OTP record for verification
+    await OTP.create({ identifier, type, otp, purpose: 'password-reset' });
+
+    res.json({
+      success: true,
+      message: `Reset OTP sent to your ${type}.`,
+    });
+  } catch (error) {
+    console.error('Forgot password error:', error);
+    res.status(500).json({ success: false, message: 'Failed to send reset OTP.' });
+  }
+});
+
+// @route   POST /api/auth/reset-password
+// @desc    Verify OTP and reset password
+// @access  Public
+router.post('/reset-password', async (req, res) => {
+  try {
+    let { identifier, otp, type, newPassword } = req.body;
+    if (!identifier || !otp || !newPassword || !type) {
+      return res.status(400).json({ success: false, message: 'All fields are required' });
+    }
+
+    identifier = normalizeIdentifier(identifier, type);
+    otp = otp.toString().trim();
+
+    // Verify OTP record
+    const otpRecord = await OTP.findOne({
+      identifier,
+      type,
+      purpose: 'password-reset',
+      isVerified: false,
+    }).sort({ createdAt: -1 });
+
+    if (!otpRecord || otpRecord.otp !== otp || otpRecord.expireAt < new Date()) {
+      return res.status(400).json({ success: false, message: 'Invalid or expired OTP.' });
+    }
+
+    // Find and update user
+    const user = await User.findOne(
+      type === 'email' ? { email: identifier } : { mobile: identifier }
+    );
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found.' });
+    }
+
+    // Reset password (will be hashed by pre-save hook)
+    user.password = newPassword;
+    await user.save();
+
+    // Mark OTP as verified
+    otpRecord.isVerified = true;
+    await otpRecord.save();
+
+    res.json({
+      success: true,
+      message: 'Password reset successful! You can now log in with your new password.',
+    });
+  } catch (error) {
+    console.error('Reset password error:', error);
+    res.status(500).json({ success: false, message: 'Failed to reset password.' });
+  }
+});
+
 module.exports = router;

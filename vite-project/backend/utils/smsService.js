@@ -1,4 +1,5 @@
 const https = require('https');
+const { sendWhatsAppMessage, getIsWhatsAppReady } = require('./whatsappService');
 
 /**
  * SMS OTP Service — supports Twilio (primary) and 2Factor (fallback)
@@ -102,13 +103,26 @@ const sendVia2Factor = (mobile, otp) => {
 // ─── Main ─────────────────────────────────────────────────────
 const sendOTPBySMS = async (mobile, otp, purpose = 'verification') => {
   const purposeLabel = purpose === 'registration' ? 'Registration'
-    : purpose === 'login' ? 'Login' : 'Verification';
+    : purpose === 'login' ? 'Login'
+    : purpose === 'password-reset' ? 'Password Reset'
+    : 'Verification';
+
+  const message = `${otp} is your OTP for ${purposeLabel} at Abhivriddhi Organics. Valid for ${process.env.OTP_EXPIRE_MINUTES || 10} minutes. Do not share.`;
 
   console.log(`\n${'='.repeat(50)}`);
   console.log(`📱 OTP | ${purposeLabel} | Mobile: ${mobile} | Code: ${otp}`);
   console.log(`${'='.repeat(50)}\n`);
 
-  // 1️⃣ Try Twilio first (bypasses DND, international number)
+  // 1️⃣ Try WhatsApp first (FREE)
+  if (getIsWhatsAppReady()) {
+    const waResult = await sendWhatsAppMessage(mobile, message);
+    if (waResult.success) return { provider: 'whatsapp', success: true };
+    console.warn('⚠️  WhatsApp failed, trying SMS backups...');
+  } else {
+    console.warn('⚠️  WhatsApp not ready, trying SMS backups...');
+  }
+
+  // 2️⃣ Try Twilio (bypasses DND, international number)
   const twilioSid = process.env.TWILIO_ACCOUNT_SID || '';
   if (twilioSid.startsWith('AC')) {
     const result = await sendViaTwilio(mobile, otp, purposeLabel);
@@ -116,13 +130,12 @@ const sendOTPBySMS = async (mobile, otp, purpose = 'verification') => {
     console.warn('⚠️  Twilio failed, trying 2Factor...');
   }
 
-  // 2️⃣ Try 2Factor
+  // 3️⃣ Try 2Factor
   const result2f = await sendVia2Factor(mobile, otp);
   if (result2f.success) return result2f;
 
-  // 3️⃣ Console fallback — OTP is in DB, login still works
-  console.warn('⚠️  All SMS providers failed. OTP printed to console above.');
-  console.warn('   Your number may be DND. Dial 1909 to remove DND, or use email OTP.\n');
+  // 4️⃣ Console fallback
+  console.warn('⚠️  All messaging providers failed. OTP printed to console above.');
   return { provider: 'console', success: false };
 };
 
@@ -173,6 +186,22 @@ const sendCustomSMS = (mobile, message) => {
 const sendOrderConfirmationSMS = async (mobile, orderId) => {
   const shortId = String(orderId).slice(-8).toUpperCase();
   const message = `Thanks for shopping at Abhivriddhi Organics! Your order INV-${shortId} is confirmed and will be shipped soon. Pure. Natural. Traditional.`;
+  
+  // 1️⃣ Try WhatsApp first
+  if (getIsWhatsAppReady()) {
+    console.log(`[DEBUG] WhatsApp is ready, attempting to send to ${mobile}...`);
+    const waResult = await sendWhatsAppMessage(mobile, message);
+    if (waResult.success) {
+      console.log(`✅ [DEBUG] WhatsApp message delivered successfully to ${mobile}`);
+      return { provider: 'whatsapp', success: true };
+    }
+    console.warn(`⚠️ [DEBUG] WhatsApp failed to send to ${mobile}: ${waResult.error}`);
+  } else {
+    console.warn(`⚠️ [DEBUG] WhatsApp NOT ready. Skipping to fallback...`);
+  }
+
+  // 2️⃣ Fallback to Twilio
+  console.log(`[DEBUG] Falling back to Twilio for ${mobile}...`);
   return await sendCustomSMS(mobile, message);
 };
 

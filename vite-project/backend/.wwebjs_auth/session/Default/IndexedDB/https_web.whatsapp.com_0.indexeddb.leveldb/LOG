@@ -1,0 +1,15 @@
+2026/04/11-01:18:47.153 7ef4 Reusing MANIFEST D:\test-dev\Abhivriddhi-ecom-dev-\vite-project\backend\.wwebjs_auth\session\Default\IndexedDB\https_web.whatsapp.com_0.indexeddb.leveldb/MANIFEST-000001
+2026/04/11-01:18:47.154 7ef4 Recovering log #230
+2026/04/11-01:18:48.783 7ef4 Reusing old log D:\test-dev\Abhivriddhi-ecom-dev-\vite-project\backend\.wwebjs_auth\session\Default\IndexedDB\https_web.whatsapp.com_0.indexeddb.leveldb/000230.log 
+2026/04/11-01:18:58.063 158c Level-0 table #240: started
+2026/04/11-01:18:58.198 158c Level-0 table #240: 1246078 bytes OK
+2026/04/11-01:18:58.247 158c Delete type=0 #230
+2026/04/11-01:18:58.681 7ef4 Compacting 1@1 + 6@2 files
+2026/04/11-01:18:59.498 7ef4 Generated table #241@1: 63607 keys, 2203241 bytes
+2026/04/11-01:19:00.007 7ef4 Generated table #242@1: 84966 keys, 2245524 bytes
+2026/04/11-01:19:00.543 7ef4 Generated table #243@1: 26846 keys, 2189642 bytes
+2026/04/11-01:19:00.976 7ef4 Generated table #244@1: 2962 keys, 2155491 bytes
+2026/04/11-01:19:01.447 7ef4 Generated table #245@1: 18885 keys, 2206816 bytes
+2026/04/11-01:19:01.650 7ef4 Generated table #246@1: 24426 keys, 1437802 bytes
+2026/04/11-01:19:01.650 7ef4 Compacted 1@1 + 6@2 files => 12438516 bytes
+2026/04/11-01:19:01.697 7ef4 compacted to: files[ 0 0 6 0 0 0 0 ]
