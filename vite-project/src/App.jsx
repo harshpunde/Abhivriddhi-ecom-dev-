@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { CartProvider, useCart } from './context/CartContext';
 import Navbar, { CartDrawer } from './components/Navbar/Navbar';
 import Footer from './components/Footer/Footer';
@@ -15,6 +15,9 @@ import CheckoutPage from './components/CheckoutPage/CheckoutPage';
 function MainLayout({ children }) {
   const { cartItems, cartOpen, setCartOpen, updateQty, removeFromCart, totalItems } = useCart();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const isCheckout = location.pathname === '/checkout';
 
   const handleCartClick = () => {
     const token = localStorage.getItem('token');
@@ -27,28 +30,32 @@ function MainLayout({ children }) {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Navbar
-        cartCount={totalItems}
-        onCartClick={handleCartClick}
-      />
+      {!isCheckout && (
+        <Navbar
+          cartCount={totalItems}
+          onCartClick={handleCartClick}
+        />
+      )}
 
-      <main className="flex-grow mt-[40px]">
+      <main className={`flex-grow ${isCheckout ? '' : 'mt-[40px]'}`}>
         {children}
       </main>
 
-      <CartDrawer
-        open={cartOpen}
-        onClose={() => setCartOpen(false)}
-        items={cartItems}
-        onUpdate={updateQty}
-        onRemove={removeFromCart}
-        onCheckout={() => {
-          setCartOpen(false);
-          navigate('/checkout');
-        }}
-      />
+      {!isCheckout && (
+        <CartDrawer
+          open={cartOpen}
+          onClose={() => setCartOpen(false)}
+          items={cartItems}
+          onUpdate={updateQty}
+          onRemove={removeFromCart}
+          onCheckout={() => {
+            setCartOpen(false);
+            navigate('/checkout');
+          }}
+        />
+      )}
 
-      <Footer />
+      {!isCheckout && <Footer />}
     </div>
   );
 }
