@@ -53,7 +53,7 @@ export function PillarsSection() {
             <div className="flex flex-col items-center md:ml-20">
               <div className="relative w-full max-w-[450px] rounded-2xl">
                 <img
-                  src="/images/satendra-singh.jpg"
+                  src="/images/satendra-singh.png"
                   alt="Mr. Satendra Singh - Farmer"
                   className="w-full h-auto transform hover:scale-105 transition duration-500"
                 />
@@ -73,7 +73,7 @@ export function PillarsSection() {
             <div className="flex flex-col items-center order-2 md:order-1 md:mr-20">
               <div className="relative w-full max-w-[450px] rounded-2xl">
                 <img
-                  src="/images/meena-singh.jpg"
+                  src="/images/meena-singh.png"
                   alt="Mrs. Meena Singh - Housewife"
                   className="w-full h-auto transform hover:scale-105 transition duration-500"
                 />
