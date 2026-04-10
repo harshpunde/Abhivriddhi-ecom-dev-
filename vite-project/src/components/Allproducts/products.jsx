@@ -15,7 +15,7 @@ function FilterDropdown({ label, value, options, onChange }) {
       >
         <span>{label}</span>
         <svg
-          style={{ transform: open ? 'rotate(180deg)' : 'rotate(0)' , transition: '0.2s' }}
+          style={{ transform: open ? 'rotate(180deg)' : 'rotate(0)', transition: '0.2s' }}
           width="16" height="16" viewBox="0 0 24 24"
           fill="none" stroke="currentColor" strokeWidth="2.5"
         >
@@ -52,8 +52,8 @@ function Sidebar({ availability, setAvailability, sortBy, setSortBy, category, s
         label="Availability"
         value={availability}
         options={[
-          { value: 'all',          label: 'All' },
-          { value: 'in-stock',     label: 'In Stock' },
+          { value: 'all', label: 'All' },
+          { value: 'in-stock', label: 'In Stock' },
           { value: 'out-of-stock', label: 'Out of Stock' },
         ]}
         onChange={setAvailability}
@@ -63,10 +63,10 @@ function Sidebar({ availability, setAvailability, sortBy, setSortBy, category, s
         label="Sort By"
         value={sortBy}
         options={[
-          { value: 'default',    label: 'Default' },
-          { value: 'price-asc',  label: 'Price: Low to High' },
+          { value: 'default', label: 'Default' },
+          { value: 'price-asc', label: 'Price: Low to High' },
           { value: 'price-desc', label: 'Price: High to Low' },
-          { value: 'name-asc',   label: 'Name: A to Z' },
+          { value: 'name-asc', label: 'Name: A to Z' },
         ]}
         onChange={setSortBy}
       />
@@ -123,10 +123,10 @@ function ProductCard({ product }) {
 // ─── Main Page ────────────────────────────────────────────────
 export default function AllProducts() {
   const [availability, setAvailability] = useState('all');
-  const [sortBy, setSortBy]             = useState('default');
-  const [category, setCategory]         = useState('all');
-  const [onlineCount]                   = useState(15);
-  const [isMobile, setIsMobile]         = useState(window.innerWidth <= 768);
+  const [sortBy, setSortBy] = useState('default');
+  const [category, setCategory] = useState('all');
+  const [onlineCount] = useState(15);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 768);
@@ -142,12 +142,12 @@ export default function AllProducts() {
 
   const filteredProducts = useMemo(() => {
     let list = [...PRODUCTS_DATA];
-    if (availability === 'in-stock')     list = list.filter(p => p.inStock);
+    if (availability === 'in-stock') list = list.filter(p => p.inStock);
     if (availability === 'out-of-stock') list = list.filter(p => !p.inStock);
-    if (category !== 'all')              list = list.filter(p => p.category === category);
-    if (sortBy === 'price-asc')  list.sort((a, b) => a.price - b.price);
+    if (category !== 'all') list = list.filter(p => p.category === category);
+    if (sortBy === 'price-asc') list.sort((a, b) => a.price - b.price);
     if (sortBy === 'price-desc') list.sort((a, b) => b.price - a.price);
-    if (sortBy === 'name-asc')   list.sort((a, b) => a.name.localeCompare(b.name));
+    if (sortBy === 'name-asc') list.sort((a, b) => a.name.localeCompare(b.name));
     return list;
   }, [availability, sortBy, category]);
 
@@ -170,8 +170,8 @@ export default function AllProducts() {
             label="Sort By"
             value={sortBy}
             options={[
-              { value: 'default',    label: 'Default' },
-              { value: 'price-asc',  label: 'Price: Low' },
+              { value: 'default', label: 'Default' },
+              { value: 'price-asc', label: 'Price: Low' },
               { value: 'price-desc', label: 'Price: High' },
             ]}
             onChange={setSortBy}
@@ -180,7 +180,7 @@ export default function AllProducts() {
             label="Availability"
             value={availability}
             options={[
-              { value: 'all',  label: 'All' },
+              { value: 'all', label: 'All' },
               { value: 'in-stock', label: 'In Stock' },
             ]}
             onChange={setAvailability}
@@ -192,15 +192,15 @@ export default function AllProducts() {
         {!isMobile && (
           <Sidebar
             availability={availability} setAvailability={setAvailability}
-            sortBy={sortBy}             setSortBy={setSortBy}
-            category={category}         setCategory={setCategory}
+            sortBy={sortBy} setSortBy={setSortBy}
+            category={category} setCategory={setCategory}
             onClear={clearFilters}
           />
         )}
 
         <section className="products-section">
           <div className="products-meta">
-            <span className="online-customers">Online Customers: {Math.floor(Math.random() * 20) + 10}</span>
+            {/* <span className="online-customers">Online Customers: {Math.floor(Math.random() * 20) + 10}</span> */}
             <span className="product-count">{filteredProducts.length} Products</span>
           </div>
 

@@ -17,16 +17,20 @@ const getTransporter = () => {
   _transporter = nodemailer.createTransport({
     host:   process.env.EMAIL_HOST   || 'smtp.gmail.com',
     port:   parseInt(process.env.EMAIL_PORT) || 587,
-    secure: process.env.EMAIL_SECURE === 'true',
-    auth: { user, pass }
+    secure: process.env.EMAIL_PORT === '465', // Port 465 uses SSL, 587 uses STARTTLS
+    auth: { user, pass },
+    tls: {
+      rejectUnauthorized: false // Helps with some network environments
+    }
   });
 
   // Verify connection immediately
   _transporter.verify((error, success) => {
     if (error) {
       console.error('❌ EMAIL TRANSPORTER ERROR:', error.message);
+      console.error('   Hint: Ensure your Gmail App Password is correct and Port 587/465 is open.');
     } else {
-      console.log('✅ EMAIL TRANSPORTER READY (CONNECTED TO GMAIL)');
+      console.log('✅ EMAIL TRANSPORTER READY (CONNECTED TO SMTP)');
     }
   });
 

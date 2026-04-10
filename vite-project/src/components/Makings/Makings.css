@@ -6,6 +6,7 @@
   padding: 60px 0;
   color: #1a1a1a;
   font-family: 'Inter', system-ui, sans-serif;
+  margin-top: 60px;
 }
 
 .makings-content {
@@ -118,7 +119,8 @@
 .decorative-title::before,
 .decorative-title::after {
   content: '';
-  width: 150px; /* Adjust based on exact visual match */
+  width: 150px;
+  /* Adjust based on exact visual match */
   height: 1px;
   background: #eee;
 }
@@ -149,12 +151,14 @@
 
 /* ─── Responsive ───────────────────────────────────────────── */
 @media (max-width: 900px) {
-  .story-section, .story-section.reverse {
+
+  .story-section,
+  .story-section.reverse {
     flex-direction: column;
     gap: 30px;
     text-align: center;
   }
-  
+
   .story-text h2 {
     justify-content: center;
   }
@@ -167,10 +171,11 @@
   .decorative-title::after {
     width: 60px;
   }
-  
+
   .side-title-right::after,
   .side-title-left::before {
-    display: none; /* Hide side lines on mobile for cleaner stack */
+    display: none;
+    /* Hide side lines on mobile for cleaner stack */
   }
 }
 
@@ -178,7 +183,7 @@
   .makings-hero h1 {
     font-size: 32px;
   }
-  
+
   .quote-text {
     font-size: 24px;
   }

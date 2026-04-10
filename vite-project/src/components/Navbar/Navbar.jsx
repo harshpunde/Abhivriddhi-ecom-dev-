@@ -3,6 +3,7 @@ import { useNavigate, NavLink } from 'react-router-dom';
 import { User, Package, Ticket, Zap, Wallet, MapPin, Heart, Gift, Bell, LogOut, ChevronDown, ChevronUp } from 'lucide-react';
 import { getCurrentUser } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
+import { PRODUCTS_DATA } from '../../data/products';
 import './Navbar.css';
 
 // ─── User Dropdown Component ──────────────────────────────────
@@ -23,12 +24,12 @@ function UserDropdown({ userName, onLogout }) {
   const menuItems = [
     { icon: <User size={16} />, label: 'My Profile', link: '/dashboard' },
     { icon: <Package size={16} />, label: 'Orders', link: '/dashboard' },
-    { icon: <Ticket size={16} />, label: 'Coupons', link: '#' },
-    { icon: <Zap size={16} />, label: 'Supercoin', link: '#' },
-    { icon: <Wallet size={16} />, label: 'Saved Cards & Wallet', link: '#' },
-    { icon: <MapPin size={16} />, label: 'Saved Addresses', link: '#' },
-    { icon: <Heart size={16} />, label: 'Wishlist', link: '#' },
-    { icon: <Gift size={16} />, label: 'Gift Cards', link: '#' },
+    // { icon: <Ticket size={16} />, label: 'Coupons', link: '#' },
+    // { icon: <Zap size={16} />, label: 'Supercoin', link: '#' },
+    // { icon: <Wallet size={16} />, label: 'Saved Cards & Wallet', link: '#' },
+    // { icon: <MapPin size={16} />, label: 'Saved Addresses', link: '#' },
+    // { icon: <Heart size={16} />, label: 'Wishlist', link: '#' },
+    // { icon: <Gift size={16} />, label: 'Gift Cards', link: '#' },
     { icon: <Bell size={16} />, label: 'Notifications', link: '#' },
   ];
 
@@ -127,6 +128,13 @@ function CartDrawer({ open, onClose, items, onUpdate, onRemove, onCheckout }) {
     return () => { document.body.style.overflow = ''; };
   }, [open]);
 
+  // Get 2 random products that aren't in cart for upsells
+  const cartIds = items.map(i => i.id);
+  const upsells = PRODUCTS_DATA
+    .filter(p => !cartIds.includes(p.id) && p.inStock)
+    .sort(() => 0.5 - Math.random())
+    .slice(0, 2);
+
   return (
     <>
       <div className={`cart-overlay ${open ? 'visible' : ''}`} onClick={onClose} />
@@ -217,26 +225,32 @@ function CartDrawer({ open, onClose, items, onUpdate, onRemove, onCheckout }) {
                 </div>
               </div>
 
-              <div className="cart-upsells">
-                <div className="upsell-tabs">
-                  <button>Best offers</button>
-                  <button className="active">You might also like</button>
-                </div>
-                <div className="upsell-dummy-grid">
-                  <div className="upsell-dummy-card">
-                    <div className="upsell-discount">12% OFF</div>
-                    <img src={items[0]?.img || ''} alt="related" />
-                    <p className="upsell-title">Khapli Wheat Atta</p>
-                    <p className="upsell-price">₹2,278</p>
+              {upsells.length > 0 && (
+                <div className="cart-upsells">
+                  <div className="upsell-tabs">
+                    <button>Best offers</button>
+                    <button className="active">You might also like</button>
                   </div>
-                  <div className="upsell-dummy-card">
-                    <div className="upsell-discount">10% OFF</div>
-                    <img src={items[0]?.img || ''} alt="related" />
-                    <p className="upsell-title">A2 Ghee (Gir Cow)</p>
-                    <p className="upsell-price">₹1,199</p>
+                  <div className="upsell-dummy-grid">
+                    {upsells.map(product => (
+                      <div 
+                        key={product.id} 
+                        className="upsell-dummy-card" 
+                        style={{ cursor: 'pointer' }}
+                        onClick={() => {
+                          onClose();
+                          navigate(`/product/${product.id}`);
+                        }}
+                      >
+                        <div className="upsell-discount">10% OFF</div>
+                        <img src={product.img} alt={product.name} />
+                        <p className="upsell-title">{product.name}</p>
+                        <p className="upsell-price">₹{product.price}</p>
+                      </div>
+                    ))}
                   </div>
                 </div>
-              </div>
+              )}
             </div>
 
             <div className="cart-footer">

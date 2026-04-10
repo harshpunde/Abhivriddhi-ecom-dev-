@@ -115,27 +115,41 @@ const sendOTPBySMS = async (mobile, otp, purpose = 'verification') => {
 
   // 1️⃣ Try WhatsApp first (FREE)
   if (getIsWhatsAppReady()) {
+    console.log('[WhatsApp] Attempting delivery...');
     const waResult = await sendWhatsAppMessage(mobile, message);
-    if (waResult.success) return { provider: 'whatsapp', success: true };
-    console.warn('⚠️  WhatsApp failed, trying SMS backups...');
+    if (waResult.success) {
+        console.log(`✅ [WhatsApp] Delivered successfully to ${mobile}`);
+        return { provider: 'whatsapp', success: true };
+    }
+    console.warn(`⚠️  [WhatsApp] Delivery FAILED: ${waResult.error || 'Unknown error'}. Trying SMS backups...`);
   } else {
-    console.warn('⚠️  WhatsApp not ready, trying SMS backups...');
+    console.warn('⚠️  [WhatsApp] Client not ready. Trying SMS backups...');
   }
 
   // 2️⃣ Try Twilio (bypasses DND, international number)
   const twilioSid = process.env.TWILIO_ACCOUNT_SID || '';
   if (twilioSid.startsWith('AC')) {
+    console.log('[Twilio] Attempting SMS delivery...');
     const result = await sendViaTwilio(mobile, otp, purposeLabel);
     if (result.success) return result;
-    console.warn('⚠️  Twilio failed, trying 2Factor...');
+    console.warn(`⚠️  [Twilio] FAILED: ${result.error}. Trying 2Factor...`);
   }
 
   // 3️⃣ Try 2Factor
-  const result2f = await sendVia2Factor(mobile, otp);
-  if (result2f.success) return result2f;
+  const apiKey2f = process.env.TWOFACTOR_API_KEY;
+  if (apiKey2f && apiKey2f !== 'your_2factor_api_key_here') {
+    console.log('[2Factor] Attempting SMS delivery...');
+    const result2f = await sendVia2Factor(mobile, otp);
+    if (result2f.success) return result2f;
+    console.warn(`⚠️  [2Factor] FAILED: ${result2f.error || 'Unknown error'}`);
+  }
 
   // 4️⃣ Console fallback
-  console.warn('⚠️  All messaging providers failed. OTP printed to console above.');
+  console.error('❌ [CRITICAL] All OTP delivery providers failed!');
+  console.log(`\n${'='.repeat(50)}`);
+  console.log(`🔥 MOCK OTP DELIVERY (Check this if you are not receiving the code)`);
+  console.log(`To: ${mobile} | Code: ${otp}`);
+  console.log(`${'='.repeat(50)}\n`);
   return { provider: 'console', success: false };
 };
 

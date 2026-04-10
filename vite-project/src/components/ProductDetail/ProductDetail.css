@@ -531,7 +531,39 @@
   }
 
   .pd-related-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  .related-img-wrap {
+    padding: 12px;
+  }
+
+  .related-img-wrap img {
+    max-width: 80px;
+  }
+
+  .related-info {
+    padding: 10px;
+    gap: 4px;
+  }
+
+  .related-name {
+    font-size: 14px;
+  }
+
+  .related-desc {
+    display: none; /* Hide description on mobile to save space */
+  }
+
+  .related-price {
+    font-size: 14px;
+  }
+
+  .related-add-btn {
+    padding: 8px 10px;
+    font-size: 11px;
+    margin-top: 6px;
   }
 
   .pd-actions {

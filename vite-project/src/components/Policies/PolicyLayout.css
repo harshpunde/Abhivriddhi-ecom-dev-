@@ -3,10 +3,10 @@
 .policy-container {
   width: 100%;
   background-color: #f4f4f4;
-  padding: 40px 20px;
+  padding: 180px 20px 60px;
+  /* Shifting only the white container 100px from the top */
   display: flex;
   justify-content: center;
-  margin-top: 60px;
 }
 
 .policy-content {
@@ -87,7 +87,7 @@
 
 @media (max-width: 480px) {
   .policy-container {
-    padding: 20px 10px;
+    padding: 140px 10px 40px; /* Shifted for mobile navbar */
   }
 
   .policy-content {

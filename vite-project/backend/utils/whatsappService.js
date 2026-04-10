@@ -14,8 +14,12 @@ const initializeWhatsApp = () => {
         authStrategy: new LocalAuth({
             dataPath: './.wwebjs_auth'
         }),
+        webVersionCache: {
+            type: 'remote',
+            remotePath: 'https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/2.3000.1014766952-alpha.html',
+        },
         puppeteer: {
-            headless: 'new',
+            headless: true, // Use stable headless mode
             handleSIGINT: false,
             args: [
                 '--no-sandbox',
@@ -46,7 +50,9 @@ const initializeWhatsApp = () => {
     });
 
     client.on('ready', () => {
-        console.log('\n✅ [WhatsApp] Client is READY and CONNECTED!');
+        console.log('\n' + '='.repeat(50));
+        console.log('✅ [WhatsApp] Client is READY and CONNECTED!');
+        console.log('='.repeat(50) + '\n');
         isReady = true;
     });
 
@@ -68,6 +74,10 @@ const initializeWhatsApp = () => {
 
     client.initialize().catch(err => {
         console.error('❌ [WhatsApp] Initialization error:', err.message);
+        if (err.message.includes('Execution context was destroyed')) {
+            console.log('[WhatsApp] Retrying initialization in 5 seconds...');
+            setTimeout(initializeWhatsApp, 5000);
+        }
     });
 };
 
@@ -87,9 +97,9 @@ const sendWhatsAppMessage = async (mobile, message) => {
         const cleanNumber = mobile.replace(/\D/g, '');
         const chatId = cleanNumber.length === 10 ? `91${cleanNumber}@c.us` : `${cleanNumber}@c.us`;
         
-        console.log(`[WhatsApp] Sending to chatId: ${chatId}`);
+        console.log(`[WhatsApp] Sending message to ${chatId}...`);
         await client.sendMessage(chatId, message);
-        console.log(`✅ [WhatsApp] Message sent to ${chatId}`);
+        console.log(`✅ [WhatsApp] Message sent successfully to ${chatId}`);
         return { success: true };
     } catch (err) {
         console.error(`❌ [WhatsApp] Message FAILED to ${mobile}:`, err.message);

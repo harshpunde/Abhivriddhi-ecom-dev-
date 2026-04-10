@@ -198,8 +198,9 @@
   align-items: center;
   justify-content: space-between;
 
-  background: rgba(194, 193, 193, 0.35);
-  backdrop-filter: blur(10px); /* Re-enabled blur for glass effect */
+  background: rgba(40, 40, 40, 0.35);
+  backdrop-filter: blur(10px);
+  /* Re-enabled blur for glass effect */
   border-radius: 10px;
 }
 

@@ -139,7 +139,8 @@
 }
 
 .product-count {
-  color: var(--meta-orange);
+  /* color: var(--meta-orange); */
+  color: green;
   font-weight: 600;
   font-size: 14px;
 }
