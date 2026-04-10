@@ -1,0 +1,109 @@
+/* Shared styles for all policy pages (Privacy, Shipping, Cancellation, Terms) */
+
+.policy-container {
+  width: 100%;
+  background-color: #f4f4f4;
+  padding: 40px 20px;
+  display: flex;
+  justify-content: center;
+  margin-top: 60px;
+}
+
+.policy-content {
+  max-width: 1000px;
+  width: 100%;
+  background: #ffffff;
+  padding: 40px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.policy-title {
+  font-size: 36px;
+  font-weight: 700;
+  margin-bottom: 10px;
+  color: #000;
+}
+
+.company-name {
+  font-size: 22px;
+  font-weight: 500;
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.policy-content p {
+  font-size: 16px;
+  line-height: 1.7;
+  color: #444;
+  margin-bottom: 18px;
+}
+
+.policy-content section {
+  margin-bottom: 24px;
+}
+
+.policy-content h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-bottom: 12px;
+}
+
+.policy-contact {
+  margin-top: 25px;
+  border-top: 1px solid #eee;
+  padding-top: 20px;
+}
+
+.policy-contact a {
+  color: #0a66c2;
+  text-decoration: none;
+}
+
+.policy-contact a:hover {
+  text-decoration: underline;
+}
+
+/* ------------------ RESPONSIVE ------------------ */
+
+@media (max-width: 768px) {
+  .policy-content {
+    padding: 25px;
+  }
+
+  .policy-title {
+    font-size: 28px;
+  }
+
+  .company-name {
+    font-size: 18px;
+  }
+
+  .policy-content p {
+    font-size: 15px;
+  }
+}
+
+@media (max-width: 480px) {
+  .policy-container {
+    padding: 20px 10px;
+  }
+
+  .policy-content {
+    padding: 20px;
+  }
+
+  .policy-title {
+    font-size: 24px;
+  }
+
+  .company-name {
+    font-size: 16px;
+  }
+
+  .policy-content p {
+    font-size: 14px;
+    line-height: 1.6;
+  }
+}

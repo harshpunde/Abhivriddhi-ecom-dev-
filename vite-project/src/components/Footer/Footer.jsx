@@ -36,7 +36,7 @@ export default function Footer() {
         <div className="footer-links-group">
           <h4 className="footer-links-title">Quick Links</h4>
           <ul className="footer-links">
-            <li><a href="#">Products</a></li>
+            <li><Link to="/products">Products</Link></li>
             <li><a href="#">Contact Us</a></li>
             <li><a href="#">Categories</a></li>
             <li><a href="#">Blogs</a></li>
@@ -47,10 +47,10 @@ export default function Footer() {
       {/* Bottom bar */}
       <div className="footer-bottom">
         <div className="footer-bottom-links">
-          <a href="#">Privacy Policy</a>
-          <a href="#">Shipping</a>
+          <Link to="/privacy-policy">Privacy Policy</Link>
+          <Link to="/shipping-policy">Shipping</Link>
           <Link to="/terms">Terms & Conditions</Link>
-          <a href="#">Cancellation &amp; Return Policy</a>
+          <Link to="/cancellation-policy">Cancellation & Return Policy</Link>
         </div>
         <span className="footer-copy">Team Abhivriddhi Organics</span>
       </div>
