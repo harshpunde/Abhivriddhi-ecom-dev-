@@ -63,6 +63,7 @@ export function ProductsSection() {
 
           <div
             ref={scrollRef}
+            className="products-scroll-track"
             style={{ ...styles.track, cursor: isDragging ? "grabbing" : "grab" }}
             onMouseDown={onMouseDown}
             onMouseMove={onMouseMove}
@@ -70,7 +71,18 @@ export function ProductsSection() {
             onMouseLeave={onMouseUp}
           >
             {PRODUCTS_DATA.map((product, i) => (
-              <div key={product.id} style={{ ...styles.card, animationDelay: `${i * 60}ms` }} className="product-scroll-card">
+              <div
+                key={product.id}
+                style={{ ...styles.card, animationDelay: `${i * 60}ms`, cursor: 'pointer' }}
+                className="product-scroll-card"
+                onClick={(e) => {
+                  // If we've moved the mouse significantly, it was a drag, not a click
+                  const dx = e.clientX - dragStart.current.x;
+                  if (Math.abs(dx) > 10) return;
+                  
+                  navigate(`/product/${product.id}`);
+                }}
+              >
                 {/* Badge */}
                 {!product.inStock && <span style={styles.badge}>Out of Stock</span>}
                 {product.inStock && i < 3 && <span style={{ ...styles.badge, background: "linear-gradient(135deg,#f59e0b,#d97706)" }}>Bestseller</span>}
@@ -99,7 +111,10 @@ export function ProductsSection() {
                         ...(product.inStock ? {} : styles.disabledBtn),
                       }}
                       onMouseDown={(e) => e.stopPropagation()}  // ← don't start drag on button click
-                      onClick={() => product.inStock && handleAdd(product)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (product.inStock) handleAdd(product);
+                      }}
                       disabled={!product.inStock}
                     >
                       {addedId === product.id ? "✓ Added" : product.inStock ? "Add to Cart" : "Sold Out"}
@@ -131,6 +146,7 @@ export function ProductsSection() {
         }
         .product-scroll-card {
           animation: fadeSlideIn 0.45s ease both;
+          width: 250px !important; /* Slightly larger on desktop */
         }
         .product-scroll-card:hover {
           transform: translateY(-6px) !important;
@@ -138,6 +154,40 @@ export function ProductsSection() {
         }
         .product-scroll-card:hover img {
           transform: scale(1.07);
+        }
+
+        /* Mobile Responsive Grid */
+        @media (max-width: 640px) {
+          .product-scroll-card {
+            width: calc(50% - 20px) !important;
+            min-width: 140px;
+          }
+          .product-scroll-card h3 {
+            font-size: 14px !important;
+          }
+          .product-scroll-card p {
+            display: none !important; /* Hide description on mobile for better fit */
+          }
+          .product-scroll-card .price {
+            font-size: 16px !important;
+          }
+          .product-scroll-card button {
+            padding: 6px 10px !important;
+            font-size: 11px !important;
+          }
+          
+          /* Robust side padding for mobile track */
+          .products-scroll-track {
+            padding-left: 16px !important;
+            padding-right: 16px !important;
+            gap: 8px !important;
+          }
+          
+          /* Extra spacer spacer to ensure right-side padding works on scroll */
+          .products-scroll-track::after {
+            content: "";
+            flex: 0 0 8px;
+          }
         }
       `}</style>
     </section>

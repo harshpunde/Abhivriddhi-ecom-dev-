@@ -108,6 +108,11 @@ export default function ProductDetail() {
     setTimeout(() => setAddedToCart(false), 1200);
   };
 
+  const handleCheckout = () => {
+    handleAddToCart();
+    navigate('/checkout');
+  };
+
   // Thumbnail images (use same image for demo — replace with real variants)
   const thumbnails = [product.img, product.img];
 
@@ -122,22 +127,56 @@ export default function ProductDetail() {
           <span className="current">{product.name}</span>
         </nav>
 
-        <div className="pd-container">
-          {/* Main Product Info */}
-          <div className="pd-main-grid">
-            {/* Left: Gallery */}
-            <div className="pd-gallery">
-              <div className="pd-main-img-container">
-                <img src={thumbnails[activeThumb]} alt={product.name} className="pd-main-img" />
-              </div>
-              <div className="pd-thumbnails">
-                {thumbnails.map((img, idx) => (
+        <div className="pd-content">
+          {/* Left: Gallery */}
+          <div className="pd-gallery">
+            <div className="pd-main-img-wrap">
+              <img src={thumbnails[activeThumb]} alt={product.name} className="pd-main-img" />
+            </div>
+            <div className="pd-thumbnails">
+              {thumbnails.map((img, idx) => (
+                <button
+                  key={idx}
+                  className={`pd-thumb ${activeThumb === idx ? 'active' : ''}`}
+                  onClick={() => setActiveThumb(idx)}
+                >
+                  <img src={img} alt="thumbnail" />
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Right: Info */}
+          <div className="pd-info">
+            <h1 className="pd-name">{product.name}</h1>
+            
+            <Accordion title="Product Description">
+              <p>{product.description}</p>
+            </Accordion>
+
+            <Accordion title="Benefits">
+              <ul className="list-disc pl-5">
+                <li>100% Organic & Stone Ground</li>
+                <li>Rich in essential nutrients and fiber</li>
+                <li>No preservatives or additives</li>
+              </ul>
+            </Accordion>
+
+            <Accordion title="Shipping & Returns">
+              <p>{SHIPPING_INFO}</p>
+            </Accordion>
+
+            {/* Weight Selection */}
+            <div className="pd-section">
+              <p className="pd-label">Select Weight</p>
+              <div className="pd-weights">
+                {WEIGHT_OPTIONS.map(w => (
                   <button
-                    key={idx}
-                    className={`thumb-btn ${activeThumb === idx ? 'active' : ''}`}
-                    onClick={() => setActiveThumb(idx)}
+                    key={w}
+                    className={`pd-weight-btn ${selectedWeight === w ? 'selected' : ''}`}
+                    onClick={() => setSelectedWeight(w)}
                   >
-                    <img src={img} alt="thumbnail" />
+                    {w}
                   </button>
                 ))}
               </div>
