@@ -69,8 +69,7 @@ export default function Footer() {
         {/* Brand */}
         <div className="footer-brand">
           <div className="footer-logo">
-            <span className="footer-logo-hindi">ABHIVRIDDHI</span>
-            <span className="footer-logo-en">ORGANICS</span>
+            <img src="images/footer-logo.png" alt="Abhivriddhi Organics" className="footer-logo-img" />
           </div>
           <p className="footer-address">
             Abhivriddhi Organics, Post Mouhar, Near Society Office / Near
@@ -98,7 +97,7 @@ export default function Footer() {
           <h4 className="footer-links-title">Quick Links</h4>
           <ul className="footer-links">
             <li><Link to="/products">Products</Link></li>
-            <li><a href="#">Contact Us</a></li>
+            <li><Link to="/contact">Contact Us</Link></li>
 
           </ul>
         </div>

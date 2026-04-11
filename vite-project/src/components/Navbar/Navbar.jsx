@@ -52,7 +52,7 @@ function UserDropdown({ userName, onLogout }) {
             </div>
             {menuItems.map((item, index) => (
               <NavLink
-                key={index}
+                key={`${item.label}-${index}`}
                 to={item.link}
                 onClick={() => setIsOpen(false)}
                 className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 hover:text-[#4a7c23] rounded-md transition"
@@ -91,7 +91,7 @@ export function AnnouncementBar() {
     <div className="announcement-bar">
       <div className="announcement-track">
         {[...items, ...items].map((item, i) => (
-          <span key={i} className="announcement-item">
+          <span key={`announce-${i}`} className="announcement-item">
             {item}
           </span>
         ))}
@@ -294,14 +294,21 @@ export default function Navbar({ cartCount = 0, onCartClick, cartItems = [], onC
       <nav className="navbar">
         <div className="navbar-inner">
           <button className="navbar-logo" onClick={() => navigate('/')} aria-label="Go to home">
-            {/* <span className="logo-hindi">अभिवृद्धि</span>
-            <span className="logo-en">Organics</span> */}
-            <img src="images/logoImage.png" alt="" />
+            <img 
+              src="images/logoImage.png" 
+              alt="Abhivriddhi Organics" 
+              width="53" 
+              height="26" 
+              fetchPriority="high" 
+              decoding="sync"
+              className="navbar-logo-img"
+            />
           </button>
 
           <div className={`navbar-links ${mobileOpen ? 'open' : ''}`}>
             <NavLink to="/products" className={({ isActive }) => `nav-link ${isActive ? 'nav-link-active' : ''}`}>Products</NavLink>
             <NavLink to="/makings" className={({ isActive }) => `nav-link ${isActive ? 'nav-link-active' : ''}`}>Makings</NavLink>
+            {/* <NavLink to="/contact" className={({ isActive }) => `nav-link ${isActive ? 'nav-link-active' : ''}`}>Contact</NavLink> */}
 
             {isAuthenticated ? (
               <UserDropdown userName={userName || 'Account'} onLogout={handleLogout} />

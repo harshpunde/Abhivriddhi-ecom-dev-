@@ -23,21 +23,14 @@
 .footer-logo {
   display: flex;
   flex-direction: column;
-  margin-bottom: 14px;
+  margin-bottom: 18px;
+  margin-left: -20px; /* Shift only the logo to the left */
 }
 
-.footer-logo-hindi {
-  font-size: 20px;
-  font-weight: 900;
-  color: #fff;
-  letter-spacing: 2px;
-}
-
-.footer-logo-en {
-  font-size: 13px;
-  font-weight: 500;
-  color: #8bcf8b;
-  letter-spacing: 3px;
+.footer-logo-img {
+  max-width: 200px; /* Increased size */
+  height: auto;
+  display: block;
 }
 
 .footer-address {
@@ -135,8 +128,26 @@
 /* ─── Responsive ──────────────────────────────────────────── */
 @media (max-width: 768px) {
   .footer-inner {
-    gap: 32px;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 20px;
     padding: 36px 20px 24px;
+    align-items: flex-start;
+  }
+
+  .footer-brand {
+    flex: 1 1 65%;
+    max-width: none;
+  }
+
+  .footer-links-group {
+    flex: 1 1 30%;
+    margin-top: 45px; /* Shifted down to align with paragraph start */
+  }
+
+  .footer-logo-img {
+    max-width: 160px; /* Slightly smaller for mobile side-by-side */
   }
 
   .footer-bottom {
