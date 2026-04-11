@@ -15,8 +15,8 @@ const getTransporter = () => {
 
   console.log(`[EMAIL] Initializing transporter with user: ${user}`);
   _transporter = nodemailer.createTransport({
-    host:   process.env.EMAIL_HOST   || 'smtp.gmail.com',
-    port:   parseInt(process.env.EMAIL_PORT) || 587,
+    host: process.env.EMAIL_HOST || 'smtp.gmail.com',
+    port: parseInt(process.env.EMAIL_PORT) || 587,
     secure: process.env.EMAIL_PORT === '465', // Port 465 uses SSL, 587 uses STARTTLS
     auth: { user, pass },
     tls: {
@@ -114,7 +114,7 @@ const sendOTPByEmail = async (email, otp, purpose = 'verification') => {
 };
 
 // ── Order Confirmation Email ──────────────────────────────────
-const sendInvoiceEmail = async (email, order, invoiceHtml) => {
+const sendInvoiceEmail = async (email, order, invoicePdf) => {
   const orderId = String(order._id).slice(-8).toUpperCase();
   const subject = `✅ Order Confirmed — INV-${orderId} | Abhivriddhi Organics`;
 
@@ -129,7 +129,6 @@ const sendInvoiceEmail = async (email, order, invoiceHtml) => {
       .content { padding: 20px; }
       .order-details { background: #f9f9f9; padding: 15px; border-radius: 8px; margin: 20px 0; }
       .footer { font-size: 12px; color: #777; text-align: center; margin-top: 20px; }
-      .btn { display: inline-block; background: #4a7c23; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; margin-top: 10px; }
     </style>
   </head>
   <body>
@@ -147,7 +146,7 @@ const sendInvoiceEmail = async (email, order, invoiceHtml) => {
           <p><strong>Delivery Address:</strong> ${order.shippingAddress?.city}, ${order.shippingAddress?.state}</p>
         </div>
 
-        <p>Your official invoice is attached to this email as a <strong>Downloadable HTML file</strong>. You can open it in any browser and print it as a PDF if needed.</p>
+        <p>Your official invoice is attached to this email as a <strong>Professional PDF document</strong>.</p>
         
         <p>If you have any questions, feel free to reply to this email or contact us at <strong>support@abhivriddhiorganics.com</strong>.</p>
         
@@ -162,15 +161,15 @@ const sendInvoiceEmail = async (email, order, invoiceHtml) => {
   </html>
   `;
 
-  return await sendEmail({ 
-    email, 
-    subject, 
+  return await sendEmail({
+    email,
+    subject,
     html: bodyHtml,
     attachments: [
       {
-        filename: `Invoice-INV-${orderId}.html`,
-        content: invoiceHtml,
-        contentType: 'text/html'
+        filename: `Invoice-INV-${orderId}.pdf`,
+        content: invoicePdf,
+        contentType: 'application/pdf'
       }
     ]
   });

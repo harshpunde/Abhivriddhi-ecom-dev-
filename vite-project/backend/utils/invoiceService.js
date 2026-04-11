@@ -1,134 +1,267 @@
+const puppeteer = require('puppeteer');
+const fs = require('fs');
+const path = require('path');
+
+
 /**
- * Invoice Service — generates invoice data for both email (HTML) and API response.
- * PDF is generated on the frontend to avoid needing pdfkit installed.
+ * Invoice Service — generates Amazon-style Tax Invoice.
  */
+
+const numberToWords = (num) => {
+  const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+  const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+  
+  const amount = Math.floor(num);
+  if (amount === 0) return 'Zero only';
+  
+  const convert = (n) => {
+    if (n < 20) return ones[n];
+    if (n < 100) return tens[Math.floor(n / 10)] + (n % 10 !== 0 ? ' ' + ones[n % 10] : '');
+    if (n < 1000) return ones[Math.floor(n / 100)] + ' Hundred' + (n % 100 !== 0 ? ' and ' + convert(n % 100) : '');
+    return '';
+  };
+
+  const handleBig = (n) => {
+    let str = '';
+    if (n >= 10000000) {
+      str += convert(Math.floor(n / 10000000)) + ' Crore ';
+      n %= 10000000;
+    }
+    if (n >= 100000) {
+      str += convert(Math.floor(n / 100000)) + ' Lakh ';
+      n %= 100000;
+    }
+    if (n >= 1000) {
+      str += convert(Math.floor(n / 1000)) + ' Thousand ';
+      n %= 1000;
+    }
+    if (n > 0) {
+      str += convert(n);
+    }
+    return str.trim() + ' only';
+  };
+
+  return handleBig(amount);
+};
 
 const generateInvoiceHTML = (order) => {
   const orderId = String(order._id).slice(-8).toUpperCase();
   const sa = order.shippingAddress || {};
-  const date = new Date(order.createdAt || Date.now()).toLocaleDateString('en-IN', {
-    day: '2-digit', month: 'long', year: 'numeric'
-  });
+  const date = new Date(order.createdAt || Date.now()).toLocaleDateString('en-GB');
+  
+  // Logo Processing
+  let logoBase64 = '';
+  try {
+    const logoPath = path.join(__dirname, 'logo.png');
+    if (fs.existsSync(logoPath)) {
+      const logoData = fs.readFileSync(logoPath);
+      logoBase64 = `data:image/png;base64,${logoData.toString('base64')}`;
+    }
+  } catch (err) {
+    console.error('Error reading logo file:', err);
+  }
+  
+  // Tax Calculations (Assuming 5% GST: 2.5% CGST + 2.5% SGST)
+  const gstRate = 0.05;
+  const netTotal = order.totalAmount / (1 + gstRate);
+  const totalTax = order.totalAmount - netTotal;
+  const halfTax = totalTax / 2;
 
-  const rows = (order.orderItems || []).map((item, i) => `
-    <tr style="background:${i % 2 === 0 ? '#fff' : '#f8fafc'}">
-      <td style="padding:10px 14px">${item.name}</td>
-      <td style="padding:10px 14px;text-align:center">${item.quantity}</td>
-      <td style="padding:10px 14px;text-align:right">₹${Number(item.price).toLocaleString('en-IN')}</td>
-      <td style="padding:10px 14px;text-align:right;font-weight:700;color:#1a3d0c">₹${Number(item.price * item.quantity).toLocaleString('en-IN')}</td>
-    </tr>`).join('');
+  const itemsRows = (order.orderItems || []).map((item, i) => {
+    const itemTotal = item.price * item.quantity;
+    const itemNet = itemTotal / (1 + gstRate);
+    const itemTax = itemTotal - itemNet;
+    const itemHalfTax = itemTax / 2;
+    
+    return `
+      <tr style="border-bottom: 1px solid #ddd;">
+        <td style="width: 30px; text-align: center; border-right: 1px solid #ddd; padding: 5px;">${i + 1}</td>
+        <td style="padding: 5px; border-right: 1px solid #ddd;">
+          <strong>${item.name}</strong><br>
+          <span style="font-size: 10px; color: #555;">HSN: 15159091</span>
+        </td>
+        <td style="width: 70px; text-align: right; padding: 5px; border-right: 1px solid #ddd;">₹${(item.price / (1+gstRate)).toFixed(2)}</td>
+        <td style="width: 50px; text-align: right; padding: 5px; border-right: 1px solid #ddd;">₹0.00</td>
+        <td style="width: 30px; text-align: center; padding: 5px; border-right: 1px solid #ddd;">${item.quantity}</td>
+        <td style="width: 70px; text-align: right; padding: 5px; border-right: 1px solid #ddd;">₹${itemNet.toFixed(2)}</td>
+        <td style="width: 40px; text-align: right; padding: 5px; border-right: 1px solid #ddd;">2.5%</td>
+        <td style="width: 40px; text-align: center; padding: 5px; border-right: 1px solid #ddd;">CGST</td>
+        <td style="width: 70px; text-align: right; padding: 5px; border-right: 1px solid #ddd;">₹${itemHalfTax.toFixed(2)}</td>
+        <td style="width: 80px; text-align: right; padding: 5px;">₹${itemTotal.toLocaleString('en-IN')}</td>
+      </tr>
+      <tr style="border-bottom: 1px solid #ddd;">
+        <td colspan="6" style="border-right: 1px solid #ddd;"></td>
+        <td style="width: 40px; text-align: right; padding: 5px; border-right: 1px solid #ddd;">2.5%</td>
+        <td style="width: 40px; text-align: center; padding: 5px; border-right: 1px solid #ddd;">SGST</td>
+        <td style="width: 70px; text-align: right; padding: 5px; border-right: 1px solid #ddd;">₹${itemHalfTax.toFixed(2)}</td>
+        <td style="border-right: none;"></td>
+      </tr>
+    `;
+  }).join('');
 
   return `<!DOCTYPE html>
 <html>
 <head>
-  <meta charset="utf-8">
-  <title>Invoice INV-${orderId} — Abhivriddhi Organics</title>
   <style>
-    @media print {
-      body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-      .no-print { display: none !important; }
-    }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: Arial, sans-serif; background: #f1f5f9; padding: 20px; }
-    .invoice { max-width: 800px; margin: 0 auto; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,.1); }
-    .header { background: linear-gradient(135deg,#1a3d0c,#4a7c23); color: #fff; padding: 36px 40px; display: flex; justify-content: space-between; align-items: flex-start; }
-    .logo h1 { font-size: 24px; margin-bottom: 6px; }
-    .logo p { font-size: 12px; opacity: .8; }
-    .invoice-label { text-align: right; }
-    .invoice-label h2 { font-size: 36px; letter-spacing: 3px; margin-bottom: 6px; }
-    .invoice-label p { font-size: 12px; opacity: .8; }
-    .meta { background: #f0fdf4; padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; }
-    .meta-item p { font-size: 12px; color: #64748b; margin-bottom: 2px; }
-    .meta-item strong { font-size: 14px; color: #1e293b; }
-    .badge { background: #4a7c23; color: #fff; padding: 6px 18px; border-radius: 6px; font-size: 13px; font-weight: 700; }
-    .body { padding: 32px 40px; }
-    .addresses { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 32px; }
-    .address-box { border: 1px solid #e2e8f0; border-radius: 10px; padding: 18px; }
-    .address-box h3 { font-size: 11px; color: #4a7c23; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
-    .address-box p { font-size: 13px; color: #374151; line-height: 1.6; }
-    table { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
-    thead tr { background: #1a3d0c; }
-    thead th { padding: 12px 14px; color: #fff; font-size: 12px; text-align: left; }
-    thead th:last-child, thead th:nth-child(2), thead th:nth-child(3) { text-align: right; }
-    thead th:nth-child(2) { text-align: center; }
-    tbody td { font-size: 13px; color: #374151; border-bottom: 1px solid #f1f5f9; }
-    .totals { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; margin-bottom: 32px; }
-    .total-row { display: flex; gap: 40px; font-size: 13px; color: #64748b; }
-    .total-grand { display: flex; gap: 40px; font-size: 16px; font-weight: 800; color: #fff; background: #4a7c23; padding: 12px 20px; border-radius: 8px; }
-    .footer { background: #1a3d0c; color: #bbf7d0; text-align: center; padding: 20px; font-size: 12px; }
-    .print-btn { display: block; text-align: center; margin: 20px auto; padding: 12px 32px; background: #4a7c23; color: #fff; border: none; border-radius: 8px; font-size: 15px; font-weight: 700; cursor: pointer; }
+    * { box-sizing: border-box; }
+    body { font-family: Arial, sans-serif; font-size: 11px; color: #000; margin: 0; padding: 0; background: #fff; line-height: 1.4; }
+    .page { padding: 30px; }
+    .container { width: 100%; border: 1px solid #ddd; padding: 20px; position: relative; }
+    
+    .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 25px; border-bottom: 2px solid #1a3d0c; padding-bottom: 15px; }
+    .logo h1 { color: #1a3d0c; margin: 0; font-size: 24px; display: flex; align-items: center; gap: 10px; }
+    .logo p { font-size: 10px; color: #4a7c23; margin: 2px 0 0; font-weight: bold; }
+    
+    .invoice-title { text-align: right; }
+    .invoice-title h1 { margin: 0; font-size: 16px; font-weight: bold; color: #1a3d0c; text-transform: uppercase; }
+    .invoice-title p { margin: 2px 0; font-size: 10px; color: #666; }
+
+    .address-section { display: flex; justify-content: space-between; margin-bottom: 20px; }
+    .seller-info { width: 48%; }
+    .buyer-info { width: 48%; text-align: right; }
+    .info-title { font-weight: bold; margin-bottom: 4px; display: block; color: #1a3d0c; text-transform: uppercase; font-size: 10px; }
+
+    .order-details { display: flex; justify-content: space-between; margin-bottom: 15px; background: #f0f7e8; padding: 10px; border: 1px solid #c2d6b2; }
+    
+    table { width: 100%; border-collapse: collapse; border: 1px solid #ddd; margin-bottom: 15px; table-layout: fixed; }
+    thead th { background: #1a3d0c; border: 1px solid #1a3d0c; padding: 8px 4px; font-size: 9px; text-align: center; text-transform: uppercase; color: #fff; }
+    
+    tbody td { border: 1px solid #eee; word-wrap: break-word; vertical-align: top; }
+
+    .total-section { display: flex; justify-content: space-between; border: 1px solid #ddd; padding: 12px; background: #fafafa; }
+    .amount-words { width: 55%; font-style: italic; font-size: 10px; }
+    .final-totals { width: 40%; text-align: right; }
+    
+    .signature-area { margin-top: 20px; text-align: right; }
+    .sig-box { border: 1px solid #ddd; padding: 20px 15px 5px; display: inline-block; min-width: 180px; text-align: center; background: #fff; }
+    
+    .footer { font-size: 9px; color: #777; margin-top: 20px; text-align: center; border-top: 1px dotted #ccc; padding-top: 8px; }
   </style>
 </head>
 <body>
-  <button class="no-print print-btn" onclick="window.print()">⬇️ Print / Save as PDF</button>
-  <div class="invoice">
-    <div class="header">
-      <div class="logo">
-        <h1>🫘 Abhivriddhi Organics</h1>
-        <p>100% Organic • Gluten Free • Chemical Free</p>
-      </div>
-      <div class="invoice-label">
-        <h2>INVOICE</h2>
-        <p>INV-${orderId}</p>
-      </div>
-    </div>
-
-    <div class="meta">
-      <div class="meta-item"><p>Invoice No</p><strong>INV-${orderId}</strong></div>
-      <div class="meta-item"><p>Order Date</p><strong>${date}</strong></div>
-      <div class="meta-item"><p>Payment Method</p><strong>Razorpay</strong></div>
-      <div class="badge">✓ PAID</div>
-    </div>
-
-    <div class="body">
-      <div class="addresses">
-        <div class="address-box">
-          <h3>Bill To</h3>
-          <p><strong>${sa.fullName || 'Customer'}</strong><br>
-          ${sa.mobile || ''}<br>
-          ${sa.addressLine || ''}<br>
-          ${sa.city || ''}, ${sa.state || ''} — ${sa.pincode || ''}</p>
+  <div class="page">
+    <div class="container">
+      <div class="header">
+        <div class="logo">
+          ${logoBase64 ? `<img src="${logoBase64}" style="height: 60px; object-fit: contain;" />` : `<h1>🫘 Abhivriddhi Organics</h1>`}
+          <p style="margin-top: -5px; color: #4a7c23; font-weight: bold;">Pure • Natural • Traditional</p>
         </div>
-        <div class="address-box">
-          <h3>Ship To</h3>
-          <p><strong>${sa.fullName || 'Customer'}</strong><br>
-          ${sa.mobile || ''}<br>
-          ${sa.addressLine || ''}<br>
-          ${sa.city || ''}, ${sa.state || ''} — ${sa.pincode || ''}</p>
+        <div class="invoice-title">
+          <h1>Tax Invoice / Bill of Supply</h1>
+          <p>(Original for Recipient)</p>
         </div>
       </div>
 
-      <table>
-        <thead>
-          <tr>
-            <th>Product Description</th>
-            <th style="text-align:center">Qty</th>
-            <th style="text-align:right">Unit Price</th>
-            <th style="text-align:right">Total</th>
-          </tr>
-        </thead>
-        <tbody>${rows}</tbody>
-      </table>
+      <div class="address-section">
+        <div class="seller-info">
+          <span class="info-title">Sold By:</span>
+          <strong>Abhivriddhi Organics Private Limited</strong><br>
+          102, Green Valley Estate, B-Phase<br>
+          Indore, MADHYA PRADESH, 452010, IN<br>
+          <strong>PAN No:</strong> ABCPD1234F<br>
+          <strong>GST Registration No:</strong> 23ABCPD1234F1Z1
+        </div>
+        <div class="buyer-info">
+          <span class="info-title">Billing Address:</span>
+          <strong>${sa.fullName || 'Customer'}</strong><br>
+          ${sa.addressLine || ''}<br>
+          ${sa.city || ''}, ${sa.state || ''}, ${sa.pincode || ''}, IN<br>
+          <strong>State Code:</strong> 23<br><br>
+          
+          <span class="info-title">Shipping Address:</span>
+          <strong>${sa.fullName || 'Customer'}</strong><br>
+          ${sa.addressLine || ''}<br>
+          ${sa.city || ''}, ${sa.state || ''}, ${sa.pincode || ''}, IN
+        </div>
+      </div>
 
-      <div class="totals">
-        <div class="total-row"><span>Subtotal</span><span>₹${Number(order.totalAmount).toLocaleString('en-IN')}</span></div>
-        <div class="total-row"><span>Shipping</span><span>FREE</span></div>
-        <div class="total-row"><span>Tax</span><span>Included</span></div>
-        <div class="total-grand"><span>Grand Total</span><span>₹${Number(order.totalAmount).toLocaleString('en-IN')}</span></div>
+    <div class="order-details">
+      <div>
+        <strong>Order Number:</strong> ${orderId}<br>
+        <strong>Order Date:</strong> ${date}
+      </div>
+      <div style="text-align: right;">
+        <strong>Invoice Number:</strong> INV-${orderId}<br>
+        <strong>Invoice Date:</strong> ${date}
+      </div>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Sl. No</th>
+          <th>Description</th>
+          <th>Unit Price</th>
+          <th>Discount</th>
+          <th>Qty</th>
+          <th>Net Amount</th>
+          <th>Tax Rate</th>
+          <th>Tax Type</th>
+          <th>Tax Amount</th>
+          <th>Total Amount</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${itemsRows}
+        <tr style="background: #eee; font-weight: bold; border-top: 2px solid #000;">
+          <td colspan="8" style="text-align: right; padding: 10px; border-right: 1px solid #ddd;">TOTAL:</td>
+          <td style="text-align: right; padding: 10px; border-right: 1px solid #ddd;">₹${totalTax.toFixed(2)}</td>
+          <td style="text-align: right; padding: 10px;">₹${order.totalAmount.toLocaleString('en-IN')}</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="total-section">
+      <div class="amount-words">
+        <strong>Amount in Words:</strong><br>
+        ${numberToWords(order.totalAmount)}
+      </div>
+      <div class="final-totals">
+        <label>For Abhivriddhi Organics Private Limited:</label><br><br>
+        <div class="sig-box">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/d/df/Signature_of_Ratan_Tata.png" style="height: 30px; opacity: 0.6;" /><br>
+          <strong>Authorized Signatory</strong>
+        </div>
       </div>
     </div>
 
     <div class="footer">
-      Thank you for shopping with Abhivriddhi Organics!<br>
-      🌱 Pure • Natural • Traditional | support@abhivriddhiorganics.com
+      This is an electronically generated invoice. No physical signature is required.<br>
+      Abhivriddhi Organics | Pure Organic Grains & Spices | Indore, India
     </div>
   </div>
-  
-  <p class="no-print" style="text-align:center; font-size:12px; color:#94a3b8; margin-top:20px;">
-    This is an electronically generated document. No signature is required.
-  </p>
 </body>
 </html>`;
 };
 
-module.exports = { generateInvoiceHTML };
+const generateInvoicePDF = async (order) => {
+  const html = generateInvoiceHTML(order);
+  let browser = null;
+
+  try {
+    browser = await puppeteer.launch({
+      headless: true,
+      args: ['--no-sandbox', '--disable-setuid-sandbox']
+    });
+    
+    const page = await browser.newPage();
+    await page.setContent(html, { waitUntil: 'networkidle0' });
+    
+    const pdfBuffer = await page.pdf({
+      format: 'A4',
+      printBackground: true,
+      margin: { top: '0px', right: '0px', bottom: '0px', left: '0px' }
+    });
+
+    return pdfBuffer;
+  } catch (error) {
+    console.error('PDF Generation Error:', error);
+    throw error;
+  } finally {
+    if (browser) {
+      await browser.close();
+    }
+  }
+};
+
+module.exports = { generateInvoiceHTML, generateInvoicePDF };
