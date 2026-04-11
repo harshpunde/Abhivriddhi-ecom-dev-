@@ -303,7 +303,7 @@ export default function Navbar({ cartCount = 0, onCartClick, cartItems = [], onC
         <div className="navbar-inner">
           <button className="navbar-logo" onClick={() => navigate('/')} aria-label="Go to home">
             <img
-              src="images/logoImage.png"
+              src="/images/logoImage.png"
               alt="Abhivriddhi Organics"
               width="53"
               height="26"
