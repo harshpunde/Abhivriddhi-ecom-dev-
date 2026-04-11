@@ -167,9 +167,21 @@
     text-align: center;
   }
 
-  .decorative-title::before,
-  .decorative-title::after {
-    width: 60px;
+  .centered-section {
+    margin-bottom: 60px; /* Reduced from 100px */
+  }
+
+  .story-section {
+    margin-bottom: 60px; /* Reduced from 100px */
+  }
+
+  .decorative-title {
+    margin-bottom: 15px; /* Reduced from 30px for tighter title grouping */
+    font-size: 24px;
+  }
+
+  .centered-text p, .story-text p {
+    margin-bottom: 16px; /* Standardized small gap between paragraphs */
   }
 
   .side-title-right::after,
