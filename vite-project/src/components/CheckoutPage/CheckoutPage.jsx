@@ -100,7 +100,7 @@ const CSS = `
   .co-cart-qty { margin:0; font-size:13px; color:#64748b; font-weight:500; }
   .co-cart-price { font-weight:800; color:#4a7c23; font-size:17px; margin-top:6px; display:block; }
   
-  .co-price-details { padding:24px; background:#fcfdfdL; }
+  .co-price-details { padding:24px; background:#fcfdfd; }
   .co-total-row { display:flex; justify-content:space-between; align-items:center; font-size:15px; color:#475569; margin-bottom:16px; font-weight:500; }
   .co-total-row.grand { font-size:19px; font-weight:900; color:#1e293b; padding:20px 0 0; border-top:2px dashed #cbd5e1; margin-top:20px; margin-bottom:0;}
   .co-badge-green { color:#16a34a; font-weight:700; background:#f0fdf4; padding:4px 10px; border-radius:6px; }
@@ -132,6 +132,24 @@ const CSS = `
     .co-form-body { padding:24px 16px !important; }
     .co-submit { width:100% !important; border-radius: 12px; font-size:15px; padding:16px; }
   }
+
+  /* Success State */
+  .co-success { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #f4fdf8 0%, #f8fafc 100%); padding: 20px; font-family: 'Inter', sans-serif; }
+  .co-success-card { background: #fff; padding: 48px; border-radius: 24px; box-shadow: 0 20px 40px rgba(74,124,35,0.08); text-align: center; max-width: 500px; width: 100%; border: 1px solid rgba(74,124,35,0.1); animation: fadeUp 0.5s ease both; }
+  .co-check-ring { font-size: 64px; margin-bottom: 20px; animation: rzp-spin 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) both; }
+  .co-success-card h2 { color: #1a3d0c; font-size: 32px; font-weight: 800; margin: 0 0 16px; }
+  .co-order-id { color: #475569; font-size: 16px; margin: 0 0 16px; font-weight: 500; }
+  .co-order-id strong { color: #4a7c23; }
+  .co-success-msg { color: #64748b; font-size: 16px; line-height: 1.6; margin-bottom: 24px; }
+  .co-success-msg strong { color: #1e293b; }
+  .co-email-notice { font-size: 14px; color: #166534; font-weight: 600; padding: 12px; background: #f0fdf4; border-radius: 8px; margin-bottom: 24px; }
+  .co-invoice-link { display: inline-block; background: #f1f5f9; color: #1e293b; font-weight: 700; text-decoration: none; padding: 14px 24px; border-radius: 10px; margin-bottom: 32px; transition: all 0.2s; }
+  .co-invoice-link:hover { background: #e2e8f0; transform: translateY(-1px); }
+  .co-success-btn { display: block; width: 100%; padding: 16px; border-radius: 12px; font-weight: 700; font-size: 15px; cursor: pointer; transition: all 0.2s; text-decoration: none; margin-bottom: 12px; }
+  .co-success-btn.outline { background: linear-gradient(135deg, #1a3d0c, #4a7c23); color: #fff; border: none; box-shadow: 0 4px 12px rgba(74,124,35,0.2); }
+  .co-success-btn.outline:hover { box-shadow: 0 6px 20px rgba(74,124,35,0.3); transform: translateY(-2px); }
+  .co-success-btn.ghost { background: transparent; color: #4a7c23; border: 2px solid #4a7c23; }
+  .co-success-btn.ghost:hover { background: #f0fdf4; }
 `;
 
 function FormField({ label, required, error, children }) {
