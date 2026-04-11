@@ -3,7 +3,7 @@ const Razorpay = require('razorpay');
 const crypto = require('crypto');
 const Order = require('../models/Order');
 const { sendInvoiceEmail } = require('../utils/emailService');
-const { generateInvoiceHTML } = require('../utils/invoiceService');
+const { generateInvoiceHTML, generateInvoicePDF } = require('../utils/invoiceService');
 const { sendOrderConfirmationSMS } = require('../utils/smsService');
 const { protect } = require('../middleware/auth');
 
@@ -132,11 +132,10 @@ router.post('/verify', async (req, res) => {
           }
 
           // 2. Send Email Invoice
-          const html = generateInvoiceHTML(order);
+          const pdfBuffer = await generateInvoicePDF(order);
           const customerEmail = order.shippingAddress?.email;
-          console.log(`[DEBUG] Attempting to send Email to: ${customerEmail}`);
           if (customerEmail) {
-            const result = await sendInvoiceEmail(customerEmail, order, html);
+            const result = await sendInvoiceEmail(customerEmail, order, pdfBuffer);
             console.log(`[DEBUG] sendInvoiceEmail result:`, result);
             if (result.success) {
               console.log(`✅ Invoice emailed to ${customerEmail}`);
@@ -173,12 +172,12 @@ router.get('/invoice/:orderId', async (req, res) => {
       return res.status(404).json({ success: false, message: 'Order not found' });
     }
 
-    const html = generateInvoiceHTML(order);
+    const pdfBuffer = await generateInvoicePDF(order);
     const orderId = String(order._id).slice(-8).toUpperCase();
 
-    res.setHeader('Content-Type', 'text/html; charset=utf-8');
-    res.setHeader('Content-Disposition', `attachment; filename="Invoice-INV-${orderId}.html"`);
-    res.send(html);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="Invoice-INV-${orderId}.pdf"`);
+    res.send(pdfBuffer);
 
   } catch (error) {
     console.error('Invoice download error:', error);
