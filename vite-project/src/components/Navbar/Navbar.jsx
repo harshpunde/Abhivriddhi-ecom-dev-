@@ -24,12 +24,12 @@ function UserDropdown({ userName, onLogout }) {
   const menuItems = [
     { icon: <User size={16} />, label: 'My Profile', link: '/profile' },
     { icon: <Package size={16} />, label: 'Orders', link: '/orders' },
-    { icon: <Ticket size={16} />, label: 'Coupons', link: '#' },
-    { icon: <Zap size={16} />, label: 'Supercoin', link: '#' },
-    { icon: <Wallet size={16} />, label: 'Saved Cards & Wallet', link: '#' },
-    { icon: <MapPin size={16} />, label: 'Saved Addresses', link: '#' },
-    { icon: <Heart size={16} />, label: 'Wishlist', link: '#' },
-    { icon: <Gift size={16} />, label: 'Gift Cards', link: '#' },
+    // { icon: <Ticket size={16} />, label: 'Coupons', link: '#' },
+    // { icon: <Zap size={16} />, label: 'Supercoin', link: '#' },
+    // { icon: <Wallet size={16} />, label: 'Saved Cards & Wallet', link: '#' },
+    // { icon: <MapPin size={16} />, label: 'Saved Addresses', link: '#' },
+    // { icon: <Heart size={16} />, label: 'Wishlist', link: '#' },
+    // { icon: <Gift size={16} />, label: 'Gift Cards', link: '#' },
     { icon: <Bell size={16} />, label: 'Notifications', link: '#' },
   ];
 
@@ -233,9 +233,9 @@ function CartDrawer({ open, onClose, items, onUpdate, onRemove, onCheckout }) {
                   </div>
                   <div className="upsell-dummy-grid">
                     {upsells.map(product => (
-                      <div 
-                        key={product.id} 
-                        className="upsell-dummy-card" 
+                      <div
+                        key={product.id}
+                        className="upsell-dummy-card"
                         style={{ cursor: 'pointer' }}
                         onClick={() => {
                           onClose();

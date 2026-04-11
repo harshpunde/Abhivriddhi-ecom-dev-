@@ -210,9 +210,6 @@ export default function AllProducts() {
             ))}
           </div>
 
-          <div className="load-more-container">
-            <button className="btn-load-more">Load more</button>
-          </div>
         </section>
       </div>
     </main>
