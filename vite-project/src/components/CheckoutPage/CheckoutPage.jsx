@@ -133,23 +133,31 @@ const CSS = `
     .co-submit { width:100% !important; border-radius: 12px; font-size:15px; padding:16px; }
   }
 
-  /* Success State */
-  .co-success { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #f4fdf8 0%, #f8fafc 100%); padding: 20px; font-family: 'Inter', sans-serif; }
-  .co-success-card { background: #fff; padding: 48px; border-radius: 24px; box-shadow: 0 20px 40px rgba(74,124,35,0.08); text-align: center; max-width: 500px; width: 100%; border: 1px solid rgba(74,124,35,0.1); animation: fadeUp 0.5s ease both; }
-  .co-check-ring { font-size: 64px; margin-bottom: 20px; animation: rzp-spin 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) both; }
-  .co-success-card h2 { color: #1a3d0c; font-size: 32px; font-weight: 800; margin: 0 0 16px; }
-  .co-order-id { color: #475569; font-size: 16px; margin: 0 0 16px; font-weight: 500; }
-  .co-order-id strong { color: #4a7c23; }
-  .co-success-msg { color: #64748b; font-size: 16px; line-height: 1.6; margin-bottom: 24px; }
-  .co-success-msg strong { color: #1e293b; }
-  .co-email-notice { font-size: 14px; color: #166534; font-weight: 600; padding: 12px; background: #f0fdf4; border-radius: 8px; margin-bottom: 24px; }
-  .co-invoice-link { display: inline-block; background: #f1f5f9; color: #1e293b; font-weight: 700; text-decoration: none; padding: 14px 24px; border-radius: 10px; margin-bottom: 32px; transition: all 0.2s; }
-  .co-invoice-link:hover { background: #e2e8f0; transform: translateY(-1px); }
-  .co-success-btn { display: block; width: 100%; padding: 16px; border-radius: 12px; font-weight: 700; font-size: 15px; cursor: pointer; transition: all 0.2s; text-decoration: none; margin-bottom: 12px; }
-  .co-success-btn.outline { background: linear-gradient(135deg, #1a3d0c, #4a7c23); color: #fff; border: none; box-shadow: 0 4px 12px rgba(74,124,35,0.2); }
-  .co-success-btn.outline:hover { box-shadow: 0 6px 20px rgba(74,124,35,0.3); transform: translateY(-2px); }
-  .co-success-btn.ghost { background: transparent; color: #4a7c23; border: 2px solid #4a7c23; }
-  .co-success-btn.ghost:hover { background: #f0fdf4; }
+  /* Success State Redesign */
+  .co-success { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #0a0f12; padding: 24px; font-family: 'Inter', sans-serif; overflow: hidden; position: relative; }
+  .co-success::before { content: ''; position: absolute; top: -10%; right: -10%; width: 60%; height: 60%; background: radial-gradient(circle, rgba(16,185,129,0.05) 0%, transparent 70%); pointer-events: none; }
+  .co-success-card { background: #fff; padding: 60px 48px; border-radius: 48px; box-shadow: 0 40px 100px rgba(0,0,0,0.2); text-align: center; max-width: 560px; width: 100%; position: relative; border: 1px solid rgba(255,255,255,0.1); animation: fadeUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) both; }
+  .co-success-badge { display: inline-flex; align-items: center; gap: 8px; background: #f0fdf4; color: #166534; padding: 8px 16px; rounded-full; font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.1em; border: 1px solid #dcfce7; border-radius: 100px; margin-bottom: 32px; }
+  .co-check-ring { width: 96px; height: 96px; background: #1a3d0c; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 40px; border-radius: 36px; margin: 0 auto 32px; box-shadow: 0 20px 40px rgba(26,61,12,0.25); transform: rotate(-10deg); }
+  .co-success-card h2 { color: #0f172a; font-size: 42px; font-weight: 900; margin: 0 0 12px; tracking-tighter; letter-spacing: -0.02em; }
+  .co-order-id { color: #94a3b8; font-size: 13px; margin: 0 0 40px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
+  .co-order-id strong { color: #1a3d0c; background: #f1f5f9; padding: 4px 10px; border-radius: 8px; margin-left: 6px; }
+  .co-success-msg { color: #475569; font-size: 17px; line-height: 1.6; margin-bottom: 40px; font-weight: 500; }
+  .co-success-msg strong { color: #0f172a; font-weight: 800; }
+  .co-success-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding-top: 40px; border-top: 2px dashed #f1f5f9; }
+  .co-success-btn { display: flex; align-items: center; justify-content: center; height: 64px; border-radius: 20px; font-weight: 800; font-size: 15px; cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); text-decoration: none; border: none; }
+  .co-success-btn.primary { background: #1a3d0c; color: #fff; box-shadow: 0 10px 20px rgba(26,61,12,0.15); }
+  .co-success-btn.primary:hover { transform: translateY(-3px); box-shadow: 0 15px 30px rgba(26,61,12,0.25); background: #245110; }
+  .co-success-btn.secondary { background: #f8fafc; color: #475569; border: 2px solid #f1f5f9; }
+  .co-success-btn.secondary:hover { background: #fff; border-color: #cbd5e1; color: #1e293b; }
+  .co-download-link { display: block; margin-top: 24px; font-size: 13px; font-weight: 800; color: #1a3d0c; text-decoration: none; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.6; transition: opacity 0.2s; }
+  .co-download-link:hover { opacity: 1; }
+  
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(40px) scale(0.95); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
 `;
 
 function FormField({ label, required, error, children }) {
@@ -183,7 +191,14 @@ export default function CheckoutPage() {
     addressLine: '', landmark: '', city: '', state: '', pincode: '',
   });
 
-  const total = cartItems.reduce((s, i) => s + i.price * i.qty, 0);
+  const total = cartItems.reduce((s, i) => s + (i.unitPrice || i.price) * i.qty, 0);
+
+  // Guard: Redirect if cart is empty
+  useEffect(() => {
+    if (cartItems.length === 0 && !success) {
+      navigate('/products');
+    }
+  }, [cartItems, success, navigate]);
 
   useEffect(() => {
     if (document.querySelector('script[src*="razorpay"]')) return;
@@ -366,7 +381,13 @@ export default function CheckoutPage() {
             landmark: form.landmark.trim(), city: form.city.trim(),
             state: form.state, pincode: form.pincode.trim(),
           },
-          cartItems: cartItems.map(i => ({ productId: String(i.id), name: i.name, price: i.price, quantity: i.qty, image: i.img || '' })),
+          cartItems: cartItems.map(i => ({ 
+            productId: String(i.id), 
+            name: i.name, 
+            price: i.unitPrice || i.price, 
+            quantity: i.qty, 
+            image: i.img || '' 
+          })),
           totalAmount: total, userId,
         }),
       });
@@ -380,26 +401,35 @@ export default function CheckoutPage() {
     }
   };
 
-  /* ─── Success screen ─── */
+  /* ─── Success screen (Redesigned) ─── */
   if (success) return (
     <div className="co-success">
       <style>{CSS}</style>
       <div className="co-success-card">
-        <div className="co-check-ring">✅</div>
-        <h2>Order Placed! 🎉</h2>
-        <p className="co-order-id">Order ID: <strong>#{String(orderId).slice(-8).toUpperCase()}</strong></p>
+        <div className="co-success-badge">
+           <span>✓ Transaction Secured</span>
+        </div>
+        
+        <div className="co-check-ring">
+           <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+        </div>
+
+        <h2>Order Authority Granted</h2>
+        <p className="co-order-id">REFERENCE IDENTIFIER <strong>#{String(orderId).slice(-10).toUpperCase()}</strong></p>
+        
         <p className="co-success-msg">
-          Thank you for shopping with <strong>Abhivriddhi Organics</strong>.<br />
-          Your organic products will be shipped soon.
+          Your allocation of <strong>Abhivriddhi Organics</strong> has been processed successfully. 
+          A confirmation dispatch has been sent to <strong>{form.email}</strong>.
         </p>
-        {form.email && (
-          <p className="co-email-notice">📧 Invoice sent to <strong>{form.email}</strong></p>
-        )}
-        <a href={`${BASE_URL}/payment/invoice/${orderId}`} target="_blank" rel="noreferrer" className="co-invoice-link">
-          ⬇️ Download Invoice
+
+        <div className="co-success-actions">
+           <button onClick={() => navigate('/products')} className="co-success-btn primary">Marketplace</button>
+           <button onClick={() => navigate('/orders')} className="co-success-btn secondary">Track Asset</button>
+        </div>
+
+        <a href={`${BASE_URL}/payment/invoice/${orderId}`} target="_blank" rel="noreferrer" className="co-download-link">
+          Download Official Invoice Protocol →
         </a>
-        <button onClick={() => navigate('/products')} className="co-success-btn outline">Continue Shopping</button>
-        <button onClick={() => navigate('/orders')} className="co-success-btn ghost">Track My Orders</button>
       </div>
     </div>
   );
@@ -553,7 +583,7 @@ export default function CheckoutPage() {
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <p className="co-cart-name">{item.name}</p>
                         <p className="co-cart-qty">Quantity: {item.qty} {item.weight ? `(${item.weight})` : ''}</p>
-                        <span className="co-cart-price">₹{(item.price * item.qty).toLocaleString('en-IN')}</span>
+                        <span className="co-cart-price">₹{((item.unitPrice || item.price) * item.qty).toLocaleString('en-IN')}</span>
                       </div>
                     </div>
                   ))}

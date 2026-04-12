@@ -83,7 +83,7 @@ export default function SignupPage() {
 
       login(response.token, response.user);
       setSuccess('Account verified! Welcome to Abhivriddhi Organics 🎉');
-      setTimeout(() => navigate(redirectTo), 1200);
+      setTimeout(() => navigate(redirectTo, { replace: true }), 1200);
     } catch (error) {
       setError(error.message || 'Verification failed. Please try again.');
     }

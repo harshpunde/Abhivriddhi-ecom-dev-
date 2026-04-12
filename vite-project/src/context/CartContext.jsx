@@ -6,7 +6,14 @@ const CartContext = createContext();
 const loadCart = () => {
   try {
     const saved = localStorage.getItem('abhivriddhi_cart');
-    return saved ? JSON.parse(saved) : [];
+    if (!saved) return [];
+    const items = JSON.parse(saved);
+    // Sanitize: help migrate old items if they are missing properties
+    return items.map(item => ({
+      ...item,
+      id: item.id || item._id, // Ensure we always have an 'id'
+      img: item.img || item.imageUrl // Ensure we always have an 'img'
+    }));
   } catch {
     return [];
   }
@@ -24,19 +31,22 @@ export function CartProvider({ children }) {
   const addToCart = (product) => {
     const weight = product.weight || '500gm';
     const unitPrice = product.unitPrice || product.price;
+    // Map database fields to legacy fields if missing
+    const pid = product.id || product._id;
+    const pimg = product.img || product.imageUrl;
 
     setCartItems(prev => {
-      const existing = prev.find(i => i.id === product.id && i.weight === weight);
+      const existing = prev.find(i => i.id === pid && i.weight === weight);
       if (existing) {
         return prev.map(i => {
-          if (i.id === product.id && i.weight === weight) {
+          if (i.id === pid && i.weight === weight) {
             const newQty = i.qty + 1;
             return { ...i, qty: newQty, totalPrice: unitPrice * newQty };
           }
           return i;
         });
       }
-      return [...prev, { ...product, weight, unitPrice, qty: 1, totalPrice: unitPrice * 1 }];
+      return [...prev, { ...product, id: pid, img: pimg, weight, unitPrice, qty: 1, totalPrice: unitPrice * 1 }];
     });
   };
 

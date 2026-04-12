@@ -1,8 +1,9 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './products.css';
-import { PRODUCTS_DATA, CATEGORIES } from '../../data/products';
+import { fetchProducts } from '../../services/api';
 import { useCart } from '../../context/CartContext';
+const CATEGORIES = ['All', 'Atta', 'Millets', 'Rice', 'Honey']; // Local copy for UI filters
 
 // ─── Filter Dropdown (Polished for Figma) ─────────────────────
 function FilterDropdown({ label, value, options, onChange }) {
@@ -87,7 +88,7 @@ function ProductCard({ product }) {
   const { addToCart, cartItems } = useCart();
   const [adding, setAdding] = useState(false);
 
-  const inCart = cartItems.some(i => i.id === product.id);
+  const inCart = cartItems.some(i => i._id === product._id);
 
   const handleAdd = (e) => {
     e.stopPropagation();
@@ -125,8 +126,26 @@ export default function AllProducts() {
   const [availability, setAvailability] = useState('all');
   const [sortBy, setSortBy] = useState('default');
   const [category, setCategory] = useState('all');
-  const [onlineCount] = useState(15);
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+
+  useEffect(() => {
+    const loadProducts = async () => {
+      try {
+        setLoading(true);
+        const data = await fetchProducts({ category, availability });
+        if (data.success) {
+          setProducts(data.products);
+        }
+      } catch (err) {
+        console.error('Failed to load products:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadProducts();
+  }, [category, availability]);
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 768);
@@ -141,15 +160,12 @@ export default function AllProducts() {
   };
 
   const filteredProducts = useMemo(() => {
-    let list = [...PRODUCTS_DATA];
-    if (availability === 'in-stock') list = list.filter(p => p.inStock);
-    if (availability === 'out-of-stock') list = list.filter(p => !p.inStock);
-    if (category !== 'all') list = list.filter(p => p.category === category);
+    let list = [...products];
     if (sortBy === 'price-asc') list.sort((a, b) => a.price - b.price);
     if (sortBy === 'price-desc') list.sort((a, b) => b.price - a.price);
     if (sortBy === 'name-asc') list.sort((a, b) => a.name.localeCompare(b.name));
     return list;
-  }, [availability, sortBy, category]);
+  }, [products, sortBy]);
 
   return (
     <main className="main-content">
@@ -205,9 +221,26 @@ export default function AllProducts() {
           </div>
 
           <div className="product-grid">
-            {filteredProducts.map(product => (
-              <ProductCard key={product.id} product={product} />
-            ))}
+            {loading ? (
+              [...Array(6)].map((_, i) => (
+                <div key={i} className="product-card skeleton shadow-none">
+                  <div className="product-img-wrap bg-gray-100 animate-pulse h-48 rounded-xl" />
+                  <div className="p-4 space-y-3">
+                    <div className="h-4 bg-gray-100 rounded animate-pulse w-3/4" />
+                    <div className="h-3 bg-gray-100 rounded animate-pulse w-1/2" />
+                  </div>
+                </div>
+              ))
+            ) : filteredProducts.length > 0 ? (
+              filteredProducts.map(product => (
+                <ProductCard key={product._id} product={product} />
+              ))
+            ) : (
+              <div className="col-span-full py-20 text-center">
+                <p className="text-gray-400 font-bold text-lg">No products found match your criteria.</p>
+                <button onClick={clearFilters} className="mt-4 text-[#4a7c23] underline font-bold">Clear All Filters</button>
+              </div>
+            )}
           </div>
 
         </section>

@@ -1,9 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, NavLink } from 'react-router-dom';
 import { User, Package, Ticket, Zap, Wallet, MapPin, Heart, Gift, Bell, LogOut, ChevronDown, ChevronUp } from 'lucide-react';
-import { getCurrentUser } from '../../services/api';
+import { fetchProducts, getCurrentUser } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
-import { PRODUCTS_DATA } from '../../data/products';
 import './Navbar.css';
 
 // ─── User Dropdown Component ──────────────────────────────────
@@ -129,11 +128,26 @@ function CartDrawer({ open, onClose, items, onUpdate, onRemove, onCheckout }) {
   }, [open]);
 
   // Get 2 random products that aren't in cart for upsells
-  const cartIds = items.map(i => i.id);
-  const upsells = PRODUCTS_DATA
-    .filter(p => !cartIds.includes(p.id) && p.inStock)
-    .sort(() => 0.5 - Math.random())
-    .slice(0, 2);
+  const [upsells, setUpsells] = useState([]);
+
+  useEffect(() => {
+    const getUpsells = async () => {
+      try {
+        const data = await fetchProducts({ limit: 4 });
+        if (data.success) {
+          const cartIds = items.map(i => i._id || i.id);
+          const filtered = data.products
+            .filter(p => !cartIds.includes(p._id))
+            .sort(() => 0.5 - Math.random())
+            .slice(0, 2);
+          setUpsells(filtered);
+        }
+      } catch (err) {
+        console.error("Upsell fetch error", err);
+      }
+    };
+    if (open) getUpsells();
+  }, [open, items.length]);
 
   return (
     <>
@@ -234,12 +248,12 @@ function CartDrawer({ open, onClose, items, onUpdate, onRemove, onCheckout }) {
                   <div className="upsell-dummy-grid">
                     {upsells.map(product => (
                       <div
-                        key={product.id}
+                        key={product._id}
                         className="upsell-dummy-card"
                         style={{ cursor: 'pointer' }}
                         onClick={() => {
                           onClose();
-                          navigate(`/product/${product.id}`);
+                          navigate(`/product/${product._id}`);
                         }}
                       >
                         <div className="upsell-discount">10% OFF</div>
@@ -285,7 +299,7 @@ export default function Navbar({ cartCount = 0, onCartClick, cartItems = [], onC
 
   const handleLogout = () => {
     logout();
-    navigate('/login');
+    navigate('/');
   };
 
   return (

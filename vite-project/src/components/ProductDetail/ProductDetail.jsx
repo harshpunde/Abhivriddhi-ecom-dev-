@@ -1,10 +1,13 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { PRODUCTS_DATA, WEIGHT_OPTIONS, SHIPPING_INFO } from '../../data/products';
+import { fetchProductById, fetchProducts } from '../../services/api';
 import { useCart } from '../../context/CartContext';
 import Navbar, { CartDrawer } from '../Navbar/Navbar';
 import Footer from '../Footer/Footer';
 import './ProductDetail.css';
+
+const WEIGHT_OPTIONS = ['500gm', '750gm', '1Kg'];
+const SHIPPING_INFO = `We ship pan-India within 5–7 business days. Orders above ₹500 qualify for free shipping. All products are packed securely to ensure freshness. Tracking details are shared via SMS/email once your order is dispatched.`;
 
 // ─── Accordion ────────────────────────────────────────────────
 function Accordion({ title, children }) {
@@ -36,7 +39,7 @@ function RelatedCard({ product }) {
   };
 
   return (
-    <div className="related-card" onClick={() => navigate(`/product/${product.id}`)}>
+    <div className="related-card" onClick={() => navigate(`/product/${product._id}`)}>
       <div className="related-img-wrap">
         <img src={product.img} alt={product.name} />
       </div>
@@ -62,12 +65,41 @@ export default function ProductDetail() {
   const navigate = useNavigate();
   const { cartItems, cartOpen, setCartOpen, addToCart, updateQty, removeFromCart, totalItems } = useCart();
 
-  const product = PRODUCTS_DATA.find(p => p.id === Number(id));
-
+  const [product, setProduct] = useState(null);
+  const [related, setRelated] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [selectedWeight, setSelectedWeight] = useState(WEIGHT_OPTIONS[0]);
   const [qty, setQty]                       = useState(1);
   const [activeThumb, setActiveThumb]       = useState(0);
   const [addedToCart, setAddedToCart]       = useState(false);
+
+  useEffect(() => {
+    const loadProductData = async () => {
+      try {
+        setLoading(true);
+        const data = await fetchProductById(id);
+        if (data.success) {
+          setProduct(data.product);
+          // Fetch related (ensure 4 items)
+          const relatedData = await fetchProducts({ limit: 12 });
+          if (relatedData.success) {
+            let filtered = relatedData.products.filter(p => p._id !== id);
+            // Prioritize same category
+            let sameCategory = filtered.filter(p => p.category === data.product.category);
+            let others = filtered.filter(p => p.category !== data.product.category);
+            
+            let finalRelated = [...sameCategory, ...others].slice(0, 4);
+            setRelated(finalRelated);
+          }
+        }
+      } catch (err) {
+        console.error('Error loading product:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadProductData();
+  }, [id]);
 
   // Weight multiplier
   const getWeightMultiplier = (weight) => {
@@ -83,6 +115,14 @@ export default function ProductDetail() {
   const unitPrice = product ? product.price * multiplier : 0;
   const totalPrice = unitPrice * qty;
 
+  if (loading) {
+    return (
+      <div className="pd-wrapper flex items-center justify-center h-screen">
+        <div className="w-12 h-12 border-4 border-[#4a7c23]/20 border-t-[#4a7c23] rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
   if (!product) {
     return (
       <div className="pd-wrapper">
@@ -96,11 +136,6 @@ export default function ProductDetail() {
     );
   }
 
-  // Related products: same category, different id, max 4
-  const related = PRODUCTS_DATA
-    .filter(p => p.category === product.category && p.id !== product.id)
-    .slice(0, 4);
-
   const handleAddToCart = () => {
     const baseItem = { ...product, weight: selectedWeight, unitPrice };
     for (let i = 0; i < qty; i++) addToCart(baseItem);
@@ -113,8 +148,8 @@ export default function ProductDetail() {
     navigate('/checkout');
   };
 
-  // Thumbnail images (use same image for demo — replace with real variants)
-  const thumbnails = [product.img, product.img];
+  // Thumbnail images
+  const thumbnails = [product.imageUrl, product.imageUrl];
 
   return (
     <main className="pd-main">

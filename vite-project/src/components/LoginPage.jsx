@@ -88,7 +88,7 @@ export default function LoginPage() {
       });
       login(response.token, response.user);
       setSuccess('Logged in successfully!');
-      setTimeout(() => navigate(redirectTo), 1000);
+      setTimeout(() => navigate(redirectTo, { replace: true }), 1000);
     } catch (error) {
       setError(error.message || 'OTP verification failed.');
     }
@@ -107,7 +107,7 @@ export default function LoginPage() {
       });
       login(response.token, response.user);
       setSuccess('Logged in successfully!');
-      setTimeout(() => navigate(redirectTo), 1000);
+      setTimeout(() => navigate(redirectTo, { replace: true }), 1000);
     } catch (error) {
       setError(error.message || 'Login failed.');
     }

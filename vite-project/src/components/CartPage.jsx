@@ -3,7 +3,7 @@ import { useCart } from '../context/CartContext';
 
 export default function CartPage() {
   const { cartItems, updateQty, removeFromCart } = useCart();
-  const totalPrice = cartItems.reduce((sum, item) => sum + item.price * item.qty, 0);
+  const totalPrice = cartItems.reduce((sum, item) => sum + (item.unitPrice || item.price) * item.qty, 0);
 
   return (
     <div className="min-h-screen bg-white text-slate-900">
@@ -63,26 +63,26 @@ export default function CartPage() {
                       <img src={item.img || item.image} alt={item.name} className="h-20 w-20 rounded-2xl object-cover" onError={e => { e.target.src = '/placeholder.png'; }} />
                       <div>
                         <h2 className="font-semibold text-slate-900">{item.name}</h2>
-                        <p className="text-sm text-slate-600">₹{item.price} /-</p>
+                        <p className="text-sm text-slate-600">₹{item.unitPrice || item.price} /- {item.weight ? `(${item.weight})` : ''}</p>
                       </div>
                     </div>
 
                     <div className="flex items-center gap-3">
                       <button
-                        onClick={() => updateQty(item.id, item.qty - 1)}
+                        onClick={() => updateQty(item.id, item.weight, item.qty - 1)}
                         className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-300 text-slate-700"
                       >
                         -
                       </button>
                       <span className="min-w-[2rem] text-center text-sm font-medium">{item.qty}</span>
                       <button
-                        onClick={() => updateQty(item.id, item.qty + 1)}
+                        onClick={() => updateQty(item.id, item.weight, item.qty + 1)}
                         className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-300 text-slate-700"
                       >
                         +
                       </button>
                       <button
-                        onClick={() => removeFromCart(item.id)}
+                        onClick={() => removeFromCart(item.id, item.weight)}
                         className="rounded-full px-3 py-2 text-sm font-medium text-red-600 transition hover:text-red-800"
                       >
                         Remove

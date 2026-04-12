@@ -22,12 +22,24 @@ const CancellationPolicy = lazy(() => import('./components/Policies/Cancellation
 const Makings = lazy(() => import('./components/Makings/Makings'));
 const OrderHistory = lazy(() => import('./components/OrderHistory/OrderHistory'));
 
+// Admin Components
+const ProtectedRoute = lazy(() => import('./components/ProtectedRoute'));
+const AdminLayout = lazy(() => import('./components/Admin/AdminLayout'));
+const AdminDashboard = lazy(() => import('./components/Admin/AdminDashboard'));
+const AdminUsers = lazy(() => import('./components/Admin/AdminUsers'));
+const AdminOrders = lazy(() => import('./components/Admin/AdminOrders'));
+const AdminProducts = lazy(() => import('./components/Admin/AdminProducts'));
+const AdminLogin = lazy(() => import('./components/Admin/AdminLogin'));
+
 function MainLayout({ children }) {
   const { cartItems, cartOpen, setCartOpen, updateQty, removeFromCart, totalItems } = useCart();
   const navigate = useNavigate();
   const location = useLocation();
 
   const isCheckout = location.pathname === '/checkout';
+  const isAdmin = location.pathname.startsWith('/admin');
+  const isAdminLogin = location.pathname === '/admin/login';
+  const hideHeaders = isCheckout || isAdmin || isAdminLogin;
 
   const handleCartClick = () => {
     setCartOpen(true);
@@ -35,14 +47,14 @@ function MainLayout({ children }) {
 
   return (
     <div className="min-h-screen flex flex-col">
-      {!isCheckout && (
+      {!hideHeaders && (
         <Navbar
           cartCount={totalItems}
           onCartClick={handleCartClick}
         />
       )}
 
-      <main className={`flex-grow ${isCheckout ? '' : 'mt-[40px]'}`}>
+      <main className={`flex-grow ${hideHeaders ? '' : 'mt-[40px]'}`}>
         <Suspense fallback={
           <div className="flex h-screen items-center justify-center">
             <div className="w-10 h-10 border-4 border-[#4a7c23]/20 border-t-[#4a7c23] rounded-full animate-spin"></div>
@@ -52,7 +64,7 @@ function MainLayout({ children }) {
         </Suspense>
       </main>
 
-      {!isCheckout && (
+      {!hideHeaders && (
         <CartDrawer
           open={cartOpen}
           onClose={() => setCartOpen(false)}
@@ -71,7 +83,7 @@ function MainLayout({ children }) {
         />
       )}
 
-      {!isCheckout && <Footer />}
+      {!hideHeaders && <Footer />}
     </div>
   );
 }
@@ -91,13 +103,31 @@ function App() {
               <Route path="/login" element={<LoginPage />} />
               <Route path="/signup" element={<SignupPage />} />
               <Route path="/profile" element={<Profile />} />
-              <Route path="/checkout" element={<CheckoutPage />} />
+              <Route path="/checkout" element={
+                <ProtectedRoute>
+                  <CheckoutPage />
+                </ProtectedRoute>
+              } />
               <Route path="/terms" element={<Terms />} />
               <Route path="/privacy-policy" element={<PrivacyPolicy />} />
               <Route path="/shipping-policy" element={<ShippingPolicy />} />
               <Route path="/cancellation-policy" element={<CancellationPolicy />} />
               <Route path="/makings" element={<Makings />} />
               <Route path="/orders" element={<OrderHistory />} />
+
+              {/* Admin Routes */}
+              <Route path="/admin" element={
+                <ProtectedRoute adminOnly={true}>
+                  <AdminLayout />
+                </ProtectedRoute>
+              }>
+                <Route index element={<AdminDashboard />} />
+                <Route path="users" element={<AdminUsers />} />
+                <Route path="orders" element={<AdminOrders />} />
+                <Route path="products" element={<AdminProducts />} />
+              </Route>
+              
+              <Route path="/admin/login" element={<AdminLogin />} />
             </Routes>
           </MainLayout>
         </BrowserRouter>

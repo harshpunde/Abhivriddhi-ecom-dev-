@@ -10,6 +10,8 @@ require('dotenv').config();
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
 const paymentRoutes = require('./routes/payment');
+const productRoutes = require('./routes/products');
+const User = require('./models/User');
 const { initializeWhatsApp } = require('./utils/whatsappService');
 
 const app = express();
@@ -46,15 +48,40 @@ app.use('/api/auth/send-otp', otpLimiter);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// Database connection
+// Database connection and Admin seeding
+const seedAdmin = async () => {
+  try {
+    const adminExists = await User.findOne({ role: 'admin' });
+    if (!adminExists) {
+      console.log('No admin found. Creating default admin...');
+      await User.create({
+        name: 'Master Admin',
+        email: 'admin@abhivriddhi.com',
+        mobile: '+919999999999',
+        password: 'abhivriddhi123',
+        role: 'admin',
+        isVerified: true
+      });
+      console.log('Default admin created: admin@abhivriddhi.com / abhivriddhi123');
+    }
+  } catch (err) {
+    console.error('Admin seeding failed:', err.message);
+  }
+};
+
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/abhivriddhi')
-  .then(() => console.log('MongoDB connected successfully'))
+  .then(() => {
+    console.log('MongoDB connected successfully');
+    seedAdmin();
+  })
   .catch(err => console.error('MongoDB connection error:', err));
 
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/payment', paymentRoutes);
+app.use('/api/products', productRoutes);
+app.use('/api/admin', require('./routes/admin'));
 
 // Health check
 app.get('/api/health', (req, res) => {

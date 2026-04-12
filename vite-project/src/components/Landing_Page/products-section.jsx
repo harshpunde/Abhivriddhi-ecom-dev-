@@ -1,7 +1,7 @@
-import { useRef, useState, useCallback } from "react"
+import { useRef, useState, useCallback, useEffect } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { useCart } from "../../context/CartContext"
-import { PRODUCTS_DATA } from "../../data/products"
+import { fetchProducts } from "../../services/api"
 
 export function ProductsSection() {
   const scrollRef = useRef(null)
@@ -9,8 +9,27 @@ export function ProductsSection() {
   const { addToCart } = useCart()
   const [addedId, setAddedId] = useState(null)
   const [isDragging, setIsDragging] = useState(false)
+  const [products, setProducts] = useState([])
+  const [loading, setLoading] = useState(true)
   const dragStart = useRef({ x: 0, scrollLeft: 0 })
-  const isMouseDown = useRef(false)        // ← only true when mouse held on track
+  const isMouseDown = useRef(false)
+
+  useEffect(() => {
+    const loadLandingProducts = async () => {
+      try {
+        setLoading(true);
+        const data = await fetchProducts({ limit: 8 });
+        if (data.success) {
+          setProducts(data.products);
+        }
+      } catch (err) {
+        console.error("Failed to load landing products", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadLandingProducts();
+  }, []);
 
   /* ── Arrow scroll ── */
   const scroll = (dir) => {
@@ -64,13 +83,19 @@ export function ProductsSection() {
           <div
             ref={scrollRef}
             className="products-scroll-track"
-            style={{ ...styles.track, cursor: isDragging ? "grabbing" : "grab" }}
+            style={{ ...styles.track, cursor: loading ? "wait" : (isDragging ? "grabbing" : "grab") }}
             onMouseDown={onMouseDown}
             onMouseMove={onMouseMove}
             onMouseUp={onMouseUp}
             onMouseLeave={onMouseUp}
           >
-            {PRODUCTS_DATA.map((product, i) => (
+            {loading ? (
+              [...Array(4)].map((_, i) => (
+                <div key={i} style={{ ...styles.card, background: '#f8fafc', animate: 'pulse' }}>
+                  <div style={{ ...styles.imgWrap, background: '#f1f5f9' }} />
+                </div>
+              ))
+            ) : products.map((product, i) => (
               <div
                 key={product.id}
                 style={{ ...styles.card, animationDelay: `${i * 60}ms`, cursor: 'pointer' }}
