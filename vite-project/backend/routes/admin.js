@@ -424,26 +424,34 @@ router.put('/orders/:id/status', async (req, res) => {
 });
 
 // ─── PRODUCT MANAGEMENT ───────────────────────────────────────
-const upload = require('../middleware/multer');
+const { upload, cloudinary } = require('../middleware/multer');
+
+// Helper to safely delete a Cloudinary asset
+const deleteFromCloudinary = async (publicId) => {
+  if (!publicId) return;
+  try {
+    await cloudinary.uploader.destroy(publicId);
+    console.log(`[Cloudinary] Deleted: ${publicId}`);
+  } catch (err) {
+    console.warn(`[Cloudinary] Failed to delete ${publicId}:`, err.message);
+  }
+};
 
 // @route   POST /api/admin/products
-// @desc    Add new product with image upload
+// @desc    Add new product — image goes to Cloudinary
 router.post('/products', upload.fields([{ name: 'image', maxCount: 1 }, { name: 'backImage', maxCount: 1 }]), async (req, res) => {
   try {
     const { name, category, description, price, inStock, weights } = req.body;
     
-    // Process images
-    const imageUrl = req.files?.image ? `/uploads/products/${req.files.image[0].filename}` : '';
-    const backImageUrl = req.files?.backImage ? `/uploads/products/${req.files.backImage[0].filename}` : '';
-    
-    // Parse weights if it's a string (FormData sends it as string)
+    // Cloudinary gives us secure_url and public_id
+    const imageUrl       = req.files?.image?.[0]?.path || '';
+    const imagePublicId  = req.files?.image?.[0]?.filename || '';
+    const backImageUrl      = req.files?.backImage?.[0]?.path || '';
+    const backImagePublicId = req.files?.backImage?.[0]?.filename || '';
+
     let parsedWeights = [];
     if (weights) {
-      try {
-        parsedWeights = JSON.parse(weights);
-      } catch (e) {
-        console.error('Failed to parse weights:', e);
-      }
+      try { parsedWeights = JSON.parse(weights); } catch (e) {}
     }
 
     const product = await Product.create({
@@ -453,7 +461,9 @@ router.post('/products', upload.fields([{ name: 'image', maxCount: 1 }, { name: 
       price: Number(price),
       inStock: inStock === 'true' || inStock === true,
       imageUrl,
+      imagePublicId,
       backImageUrl,
+      backImagePublicId,
       weights: parsedWeights
     });
 
@@ -465,10 +475,12 @@ router.post('/products', upload.fields([{ name: 'image', maxCount: 1 }, { name: 
 });
 
 // @route   PUT /api/admin/products/:id
-// @desc    Update product with optional image upload
+// @desc    Update product — new images replace old on Cloudinary
 router.put('/products/:id', upload.fields([{ name: 'image', maxCount: 1 }, { name: 'backImage', maxCount: 1 }]), async (req, res) => {
   try {
-    const { name, category, description, price, inStock, weights, imageUrl: existingImageUrl, backImageUrl: existingBackImageUrl } = req.body;
+    const { name, category, description, price, inStock, weights,
+            imageUrl: existingImageUrl, backImageUrl: existingBackImageUrl,
+            imagePublicId: existingImagePublicId, backImagePublicId: existingBackImagePublicId } = req.body;
     
     const updateData = {
       name,
@@ -478,35 +490,31 @@ router.put('/products/:id', upload.fields([{ name: 'image', maxCount: 1 }, { nam
       inStock: inStock === 'true' || inStock === true
     };
 
-    // Handle Front Image
+    // Handle Front Image — delete old from Cloudinary if new one uploaded
     if (req.files?.image) {
-      updateData.imageUrl = `/uploads/products/${req.files.image[0].filename}`;
+      await deleteFromCloudinary(existingImagePublicId);
+      updateData.imageUrl      = req.files.image[0].path;
+      updateData.imagePublicId = req.files.image[0].filename;
     } else if (existingImageUrl) {
-      updateData.imageUrl = existingImageUrl;
+      updateData.imageUrl      = existingImageUrl;
+      updateData.imagePublicId = existingImagePublicId;
     }
 
     // Handle Back Image
     if (req.files?.backImage) {
-      updateData.backImageUrl = `/uploads/products/${req.files.backImage[0].filename}`;
+      await deleteFromCloudinary(existingBackImagePublicId);
+      updateData.backImageUrl      = req.files.backImage[0].path;
+      updateData.backImagePublicId = req.files.backImage[0].filename;
     } else if (existingBackImageUrl) {
-      updateData.backImageUrl = existingBackImageUrl;
+      updateData.backImageUrl      = existingBackImageUrl;
+      updateData.backImagePublicId = existingBackImagePublicId;
     }
 
-    // Parse weights
     if (weights) {
-      try {
-        updateData.weights = JSON.parse(weights);
-      } catch (e) {
-        console.error('Failed to parse weights during update:', e);
-      }
+      try { updateData.weights = JSON.parse(weights); } catch (e) {}
     }
 
-    const product = await Product.findByIdAndUpdate(
-      req.params.id, 
-      updateData, 
-      { new: true, runValidators: true }
-    );
-
+    const product = await Product.findByIdAndUpdate(req.params.id, updateData, { new: true, runValidators: true });
     if (!product) return res.status(404).json({ success: false, message: 'Product not found' });
     res.json({ success: true, product });
   } catch (err) {
@@ -516,12 +524,18 @@ router.put('/products/:id', upload.fields([{ name: 'image', maxCount: 1 }, { nam
 });
 
 // @route   DELETE /api/admin/products/:id
-// @desc    Delete product
+// @desc    Delete product + its Cloudinary images
 router.delete('/products/:id', async (req, res) => {
   try {
-    const product = await Product.findByIdAndDelete(req.params.id);
+    const product = await Product.findById(req.params.id);
     if (!product) return res.status(404).json({ success: false, message: 'Product not found' });
-    res.json({ success: true, message: 'Product deleted successfully' });
+
+    // Delete images from Cloudinary
+    await deleteFromCloudinary(product.imagePublicId);
+    await deleteFromCloudinary(product.backImagePublicId);
+
+    await Product.findByIdAndDelete(req.params.id);
+    res.json({ success: true, message: 'Product and its images deleted successfully' });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }

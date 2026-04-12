@@ -33,8 +33,14 @@ const productSchema = new mongoose.Schema({
     type: String,
     required: [true, 'Image URL is required']
   },
+  imagePublicId: {
+    type: String  // Cloudinary public_id for deletion
+  },
   backImageUrl: {
     type: String
+  },
+  backImagePublicId: {
+    type: String  // Cloudinary public_id for back image deletion
   },
   ratings: {
     type: Number,

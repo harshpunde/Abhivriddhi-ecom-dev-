@@ -16,18 +16,19 @@ let connectionStatus = 'Disconnected'; // Disconnected, Initializing, Ready
  */
 const killBrowserProcesses = () => {
     return new Promise((resolve) => {
-        if (process.platform !== 'win32') return resolve();
-
-        console.log('[WhatsApp] Attempting to clear zombie browser processes...');
-        // Kill chrome and chromium instances started by node
-        exec('taskkill /F /IM chrome.exe /T', (err) => {
-            if (err) {
-                // Ignore errors if no process found
-            }
-            exec('taskkill /F /IM chromium.exe /T', (err) => {
-                resolve();
+        const platform = process.platform;
+        console.log(`[WhatsApp] Clearing zombie browser processes on ${platform}...`);
+        
+        if (platform === 'win32') {
+            exec('taskkill /F /IM chrome.exe /T', () => {
+                exec('taskkill /F /IM chromium.exe /T', () => resolve());
             });
-        });
+        } else if (platform === 'darwin' || platform === 'linux') {
+            // Kill any chromium/chrome processes owned by current user
+            exec('pkill -i -f "Chromium" || pkill -i -f "Google Chrome"', () => resolve());
+        } else {
+            resolve();
+        }
     });
 };
 
@@ -56,16 +57,19 @@ const deleteSessionData = () => {
  */
 const clearSessionLocks = (sessionPath) => {
     try {
-        const lockFiles = ['SingletonLock', 'lockfile', 'DevToolsActivePort'];
+        const lockFiles = ['SingletonLock', 'lockfile', 'DevToolsActivePort', 'SingletonCookie', 'SingletonSocket'];
         lockFiles.forEach(file => {
             const fullPath = path.join(sessionPath, file);
             if (fs.existsSync(fullPath)) {
                 console.log(`[WhatsApp] Removing lock file: ${file}`);
-                fs.unlinkSync(fullPath);
+                try {
+                    fs.unlinkSync(fullPath);
+                } catch (e) {
+                    console.warn(`[WhatsApp] Could not delete lock file ${file}: ${e.message}`);
+                }
             }
         });
     } catch (err) {
-        // Only warn if it's not a 'no such file' error
         if (err.code !== 'ENOENT') {
             console.warn('[WhatsApp] Lock cleanup warning:', err.message);
         }
@@ -93,11 +97,11 @@ const initializeWhatsApp = async () => {
             connectionStatus = 'Disconnected';
         }
     }, 60000);
-    
+
     try {
         // --- STABLE BOOT SEQUENCE ---
         const sessionPath = path.resolve(__dirname, '../.wwebjs_auth/session');
-        
+
         // 1. Kill potential zombie processes
         await killBrowserProcesses();
 
@@ -111,8 +115,8 @@ const initializeWhatsApp = async () => {
             console.log('[WhatsApp] Cleaning up old client instance...');
             try {
                 client.removeAllListeners();
-                await client.destroy().catch(() => {});
-            } catch (e) {}
+                await client.destroy().catch(() => { });
+            } catch (e) { }
             client = null;
         }
 
@@ -120,7 +124,7 @@ const initializeWhatsApp = async () => {
         const { Client, LocalAuth } = require('whatsapp-web.js');
 
         console.log('[WhatsApp] Creating client instance...');
-        
+
         // Find system chrome if possible (Windows common paths)
         const chromePaths = [
             'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
@@ -208,22 +212,22 @@ const initializeWhatsApp = async () => {
         console.log('[WhatsApp] Attempting client initialization...');
         await client.initialize();
         console.log('[WhatsApp] client.initialize() call completed.');
-        
+
         // Note: isInitializing will be set to false in 'ready' or 'qr' events
     } catch (err) {
         clearTimeout(initTimeout);
         console.error('❌ [WhatsApp] CRITICAL ERROR:', err.message);
         isInitializing = false;
         connectionStatus = 'Disconnected';
-        
+
         // Log stack trace for deeper debugging
         console.error(err.stack);
-        
+
         // Check if it's a lock error and maybe wait longer
         const isLockError = err.message.includes('already running');
         const retryDelay = isLockError ? 30000 : 10000;
-        
-        console.log(`[WhatsApp] Retrying in ${retryDelay/1000}s...`);
+
+        console.log(`[WhatsApp] Retrying in ${retryDelay / 1000}s...`);
         setTimeout(() => initializeWhatsApp(), retryDelay);
     }
 };
@@ -258,10 +262,10 @@ const forceRelink = async () => {
         isInitializing = false;
         qrString = '';
         connectionStatus = 'Disconnected';
-        
+
         if (client) {
             client.removeAllListeners();
-            await client.destroy().catch(() => {});
+            await client.destroy().catch(() => { });
             client = null;
         }
 
@@ -270,7 +274,7 @@ const forceRelink = async () => {
 
         // 2. Wipe physical session data to ensure new QR
         await deleteSessionData();
-        
+
         // 3. Re-initialize after buffer
         console.log('[WhatsApp] Re-initializing for new client...');
         setTimeout(() => initializeWhatsApp(), 3000);
@@ -293,17 +297,17 @@ const hardResetWhatsApp = async () => {
         isInitializing = false;
         qrString = '';
         connectionStatus = 'Disconnected';
-        
+
         if (client) {
             client.removeAllListeners();
-            await client.destroy().catch(() => {});
+            await client.destroy().catch(() => { });
             client = null;
         }
 
         // Deep cleanup
         await killBrowserProcesses();
         await deleteSessionData();
-        
+
         // Boot after 3s cleanup window
         setTimeout(() => initializeWhatsApp(), 3000);
         return { success: true, message: 'Hard reset triggered' };
