@@ -33,6 +33,9 @@ const productSchema = new mongoose.Schema({
     type: String,
     required: [true, 'Image URL is required']
   },
+  backImageUrl: {
+    type: String
+  },
   ratings: {
     type: Number,
     default: 4.5
@@ -65,6 +68,10 @@ productSchema.virtual('id').get(function() {
 
 productSchema.virtual('img').get(function() {
   return this.imageUrl;
+});
+
+productSchema.virtual('backImg').get(function() {
+  return this.backImageUrl;
 });
 
 // Ensure virtuals are serialized

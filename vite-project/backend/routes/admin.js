@@ -428,12 +428,13 @@ const upload = require('../middleware/multer');
 
 // @route   POST /api/admin/products
 // @desc    Add new product with image upload
-router.post('/products', upload.single('image'), async (req, res) => {
+router.post('/products', upload.fields([{ name: 'image', maxCount: 1 }, { name: 'backImage', maxCount: 1 }]), async (req, res) => {
   try {
     const { name, category, description, price, inStock, weights } = req.body;
     
-    // Process imageUrl (relative path)
-    const imageUrl = req.file ? `/uploads/products/${req.file.filename}` : '';
+    // Process images
+    const imageUrl = req.files?.image ? `/uploads/products/${req.files.image[0].filename}` : '';
+    const backImageUrl = req.files?.backImage ? `/uploads/products/${req.files.backImage[0].filename}` : '';
     
     // Parse weights if it's a string (FormData sends it as string)
     let parsedWeights = [];
@@ -452,6 +453,7 @@ router.post('/products', upload.single('image'), async (req, res) => {
       price: Number(price),
       inStock: inStock === 'true' || inStock === true,
       imageUrl,
+      backImageUrl,
       weights: parsedWeights
     });
 
@@ -464,9 +466,9 @@ router.post('/products', upload.single('image'), async (req, res) => {
 
 // @route   PUT /api/admin/products/:id
 // @desc    Update product with optional image upload
-router.put('/products/:id', upload.single('image'), async (req, res) => {
+router.put('/products/:id', upload.fields([{ name: 'image', maxCount: 1 }, { name: 'backImage', maxCount: 1 }]), async (req, res) => {
   try {
-    const { name, category, description, price, inStock, weights, imageUrl: existingImageUrl } = req.body;
+    const { name, category, description, price, inStock, weights, imageUrl: existingImageUrl, backImageUrl: existingBackImageUrl } = req.body;
     
     const updateData = {
       name,
@@ -476,11 +478,18 @@ router.put('/products/:id', upload.single('image'), async (req, res) => {
       inStock: inStock === 'true' || inStock === true
     };
 
-    // If new file uploaded, use it. Otherwise keep existing or new URL
-    if (req.file) {
-      updateData.imageUrl = `/uploads/products/${req.file.filename}`;
+    // Handle Front Image
+    if (req.files?.image) {
+      updateData.imageUrl = `/uploads/products/${req.files.image[0].filename}`;
     } else if (existingImageUrl) {
       updateData.imageUrl = existingImageUrl;
+    }
+
+    // Handle Back Image
+    if (req.files?.backImage) {
+      updateData.backImageUrl = `/uploads/products/${req.files.backImage[0].filename}`;
+    } else if (existingBackImageUrl) {
+      updateData.backImageUrl = existingBackImageUrl;
     }
 
     // Parse weights

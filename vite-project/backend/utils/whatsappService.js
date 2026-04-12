@@ -116,11 +116,26 @@ const initializeWhatsApp = async () => {
             client = null;
         }
 
-        // Lazy load module to prevent top-level initialization hang
-        console.log('[WhatsApp] Loading whatsapp-web.js module... (DISABLED DUE TO HANG)');
-        // const { Client, LocalAuth } = require('whatsapp-web.js');
+        console.log('[WhatsApp] Loading whatsapp-web.js module...');
+        const { Client, LocalAuth } = require('whatsapp-web.js');
 
-        /*
+        console.log('[WhatsApp] Creating client instance...');
+        
+        // Find system chrome if possible (Windows common paths)
+        const chromePaths = [
+            'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+            'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
+            'C:\\LocalAppDirectory\\Google\\Chrome\\Application\\chrome.exe'
+        ];
+        let executablePath = '';
+        for (const p of chromePaths) {
+            if (fs.existsSync(p)) {
+                executablePath = p;
+                console.log(`[WhatsApp] Found system Chrome at: ${p}`);
+                break;
+            }
+        }
+
         client = new Client({
             authStrategy: new LocalAuth({
                 dataPath: './.wwebjs_auth'
@@ -132,6 +147,7 @@ const initializeWhatsApp = async () => {
             puppeteer: {
                 headless: 'new',
                 handleSIGINT: false,
+                executablePath: executablePath || undefined,
                 args: [
                     '--no-sandbox',
                     '--disable-setuid-sandbox',
@@ -139,11 +155,13 @@ const initializeWhatsApp = async () => {
                     '--disable-extensions',
                     '--no-zygote',
                     '--disable-gpu',
+                    '--disable-software-rasterizer',
                     '--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
                 ],
             }
         });
 
+        console.log('[WhatsApp] Setting up event listeners...');
         client.on('qr', (qr) => {
             clearTimeout(initTimeout);
             qrString = qr;
@@ -187,13 +205,19 @@ const initializeWhatsApp = async () => {
             setTimeout(() => initializeWhatsApp(), 10000);
         });
 
+        console.log('[WhatsApp] Attempting client initialization...');
         await client.initialize();
-        */
+        console.log('[WhatsApp] client.initialize() call completed.');
+        
+        // Note: isInitializing will be set to false in 'ready' or 'qr' events
     } catch (err) {
         clearTimeout(initTimeout);
         console.error('❌ [WhatsApp] CRITICAL ERROR:', err.message);
         isInitializing = false;
         connectionStatus = 'Disconnected';
+        
+        // Log stack trace for deeper debugging
+        console.error(err.stack);
         
         // Check if it's a lock error and maybe wait longer
         const isLockError = err.message.includes('already running');

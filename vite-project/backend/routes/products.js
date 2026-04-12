@@ -33,12 +33,24 @@ router.get('/', async (req, res) => {
   }
 });
 
+const mongoose = require('mongoose');
+
 // @route   GET /api/products/:id
 // @desc    Get single product
 // @access  Public
 router.get('/:id', async (req, res) => {
   try {
-    const product = await Product.findById(req.params.id);
+    const { id } = req.params;
+
+    // Validate if the ID is a valid MongoDB ObjectId
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Invalid product ID format' 
+      });
+    }
+
+    const product = await Product.findById(id);
     if (!product) {
       return res.status(404).json({ success: false, message: 'Product not found' });
     }
