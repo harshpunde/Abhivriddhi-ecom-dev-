@@ -6,7 +6,6 @@
 /* ─── Announcement Bar ─────────────────────────────────────── */
 .announcement-bar {
   background: #2C7700;
-  border-bottom: 1px solid #e0e8e0;
   overflow: hidden;
   padding: 8px 0;
   font-size: 12px;
@@ -14,6 +13,8 @@
   color: #ffffff;
   white-space: nowrap;
   font-family: 'Inter', system-ui, sans-serif;
+  border-bottom: none !important;
+  box-shadow: none !important;
 }
 
 
@@ -181,7 +182,7 @@
 .navbar {
   /* position: absolute; */
   position: fixed;
-  top: 48px;
+  top: 34px; /* Perfectly flush with announcement bar height (8+8+18px) */
   left: 0;
   width: 100%;
   z-index: 100;
