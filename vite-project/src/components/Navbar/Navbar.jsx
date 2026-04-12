@@ -51,7 +51,7 @@ function UserDropdown({ userName, onLogout }) {
             </div>
             {menuItems.map((item, index) => (
               <NavLink
-                key={index}
+                key={`${item.label}-${index}`}
                 to={item.link}
                 onClick={() => setIsOpen(false)}
                 className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 hover:text-[#4a7c23] rounded-md transition"
@@ -90,7 +90,7 @@ export function AnnouncementBar() {
     <div className="announcement-bar">
       <div className="announcement-track">
         {[...items, ...items].map((item, i) => (
-          <span key={i} className="announcement-item">
+          <span key={`announce-${i}`} className="announcement-item">
             {item}
           </span>
         ))}
@@ -173,24 +173,32 @@ function CartDrawer({ open, onClose, items, onUpdate, onRemove, onCheckout }) {
           </div>
         ) : (
           <>
-            <div className="cart-promo-banner">
+            {/* <div className="cart-promo-banner">
               🎫 Get 10% OFF on orders above ₹3000 | Use code - TBOF10
-            </div>
+            </div> */}
 
             <div className="cart-scroll-area">
               <div className="shipping-progress">
-                <p className="shipping-text">Add <strong>₹1,275</strong> more to unlock <strong>FREE Shipping + 10% OFF</strong> 🎉</p>
+                {total < 1499 ? (
+                  <p className="shipping-text">
+                    Add <strong>₹{(1499 - total).toFixed(0)}</strong> more to unlock <strong>FREE Shipping</strong> 🎉
+                  </p>
+                ) : (
+                  <p className="shipping-text">
+                    Congratulations! You've unlocked <strong>FREE Shipping</strong> 🚚✨
+                  </p>
+                )
+                }
                 <div className="progress-bar-container">
-                  <div className="progress-bar-fill" style={{ width: '45%' }}></div>
+                  <div 
+                    className="progress-bar-fill" 
+                    style={{ width: `${Math.min((total / 1499) * 100, 100)}%` }}
+                  ></div>
                 </div>
                 <div className="progress-milestones">
-                  <div className="milestone achieved">
-                    <div className="milestone-icon">✓</div>
+                  <div className={`milestone ${total >= 1499 ? 'achieved' : 'pending'}`}>
+                    <div className="milestone-icon">{total >= 1499 ? '✓' : '!'}</div>
                     <div className="milestone-labels"><span>₹1499</span><span>Free Shipping</span></div>
-                  </div>
-                  <div className="milestone pending">
-                    <div className="milestone-icon">✓</div>
-                    <div className="milestone-labels"><span>₹3000</span><span>10% OFF</span></div>
                   </div>
                 </div>
               </div>
@@ -221,7 +229,7 @@ function CartDrawer({ open, onClose, items, onUpdate, onRemove, onCheckout }) {
                 ))}
               </div>
 
-              <div className="cart-coupons">
+              {/* <div className="cart-coupons">
                 <div className="coupon-row">
                   <span className="coupon-icon">💚</span>
                   <div className="coupon-text">
@@ -237,12 +245,12 @@ function CartDrawer({ open, onClose, items, onUpdate, onRemove, onCheckout }) {
                   </div>
                   <button className="btn-view-coupons">View all coupons &gt;</button>
                 </div>
-              </div>
+              </div> */}
 
               {upsells.length > 0 && (
                 <div className="cart-upsells">
                   <div className="upsell-tabs">
-                    <button>Best offers</button>
+                    {/* <button>Best offers</button> */}
                     <button className="active">You might also like</button>
                   </div>
                   <div className="upsell-dummy-grid">
@@ -274,7 +282,7 @@ function CartDrawer({ open, onClose, items, onUpdate, onRemove, onCheckout }) {
                 <span className="checkout-lbl">Checkout</span>
                 <span className="checkout-amt">₹{total.toFixed(0)} →</span>
               </button>
-              <div className="powered-by">Powered by <strong>shopflo</strong></div>
+              {/* <div className="powered-by">Powered by <strong>shopflo</strong></div> */}
             </div>
           </>
         )}
@@ -308,14 +316,21 @@ export default function Navbar({ cartCount = 0, onCartClick, cartItems = [], onC
       <nav className="navbar">
         <div className="navbar-inner">
           <button className="navbar-logo" onClick={() => navigate('/')} aria-label="Go to home">
-            {/* <span className="logo-hindi">अभिवृद्धि</span>
-            <span className="logo-en">Organics</span> */}
-            <img src="images/logoImage.png" alt="" />
+            <img
+              src="/images/logoImage.png"
+              alt="Abhivriddhi Organics"
+              width="53"
+              height="26"
+              fetchPriority="high"
+              decoding="sync"
+              className="navbar-logo-img"
+            />
           </button>
 
           <div className={`navbar-links ${mobileOpen ? 'open' : ''}`}>
             <NavLink to="/products" className={({ isActive }) => `nav-link ${isActive ? 'nav-link-active' : ''}`}>Products</NavLink>
             <NavLink to="/makings" className={({ isActive }) => `nav-link ${isActive ? 'nav-link-active' : ''}`}>Makings</NavLink>
+            {/* <NavLink to="/contact" className={({ isActive }) => `nav-link ${isActive ? 'nav-link-active' : ''}`}>Contact</NavLink> */}
 
             {isAuthenticated ? (
               <UserDropdown userName={userName || 'Account'} onLogout={handleLogout} />

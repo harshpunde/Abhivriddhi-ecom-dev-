@@ -21,6 +21,9 @@ const ShippingPolicy = lazy(() => import('./components/Policies/ShippingPolicy')
 const CancellationPolicy = lazy(() => import('./components/Policies/CancellationPolicy'));
 const Makings = lazy(() => import('./components/Makings/Makings'));
 const OrderHistory = lazy(() => import('./components/OrderHistory/OrderHistory'));
+const ContactUs = lazy(() => import('./components/ContactUs/ContactUs'));
+import ErrorBoundary from './components/ErrorBoundary';
+
 
 // Admin Components
 const ProtectedRoute = lazy(() => import('./components/ProtectedRoute'));
@@ -33,6 +36,7 @@ const AdminLogin = lazy(() => import('./components/Admin/AdminLogin'));
 
 function MainLayout({ children }) {
   const { cartItems, cartOpen, setCartOpen, updateQty, removeFromCart, totalItems } = useCart();
+  const { loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -40,6 +44,14 @@ function MainLayout({ children }) {
   const isAdmin = location.pathname.startsWith('/admin');
   const isAdminLogin = location.pathname === '/admin/login';
   const hideHeaders = isCheckout || isAdmin || isAdminLogin;
+
+  if (authLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-white">
+        <div className="w-10 h-10 border-4 border-[#4a7c23]/20 border-t-[#4a7c23] rounded-full animate-spin"></div>
+      </div>
+    );
+  }
 
   const handleCartClick = () => {
     setCartOpen(true);
@@ -90,49 +102,52 @@ function MainLayout({ children }) {
 
 function App() {
   return (
-    <AuthProvider>
-      <CartProvider>
-        <BrowserRouter>
-          <ScrollToTop />
-          <MainLayout>
-            <Routes>
-              <Route path="/" element={<LandingPage />} />
-              <Route path="/products" element={<AllProducts />} />
-              <Route path="/product/:id" element={<ProductDetail />} />
-              <Route path="/cart" element={<CartPage />} />
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/signup" element={<SignupPage />} />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/checkout" element={
-                <ProtectedRoute>
-                  <CheckoutPage />
-                </ProtectedRoute>
-              } />
-              <Route path="/terms" element={<Terms />} />
-              <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-              <Route path="/shipping-policy" element={<ShippingPolicy />} />
-              <Route path="/cancellation-policy" element={<CancellationPolicy />} />
-              <Route path="/makings" element={<Makings />} />
-              <Route path="/orders" element={<OrderHistory />} />
+    <ErrorBoundary>
+      <AuthProvider>
+        <CartProvider>
+          <BrowserRouter>
+            <ScrollToTop />
+            <MainLayout>
+              <Routes>
+                <Route path="/" element={<LandingPage />} />
+                <Route path="/products" element={<AllProducts />} />
+                <Route path="/product/:id" element={<ProductDetail />} />
+                <Route path="/cart" element={<CartPage />} />
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/signup" element={<SignupPage />} />
+                <Route path="/profile" element={<Profile />} />
+                <Route path="/checkout" element={
+                  <ProtectedRoute>
+                    <CheckoutPage />
+                  </ProtectedRoute>
+                } />
+                <Route path="/terms" element={<Terms />} />
+                <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+                <Route path="/shipping-policy" element={<ShippingPolicy />} />
+                <Route path="/cancellation-policy" element={<CancellationPolicy />} />
+                <Route path="/makings" element={<Makings />} />
+                <Route path="/orders" element={<OrderHistory />} />
+                <Route path="/contact" element={<ContactUs />} />
 
-              {/* Admin Routes */}
-              <Route path="/admin" element={
-                <ProtectedRoute adminOnly={true}>
-                  <AdminLayout />
-                </ProtectedRoute>
-              }>
-                <Route index element={<AdminDashboard />} />
-                <Route path="users" element={<AdminUsers />} />
-                <Route path="orders" element={<AdminOrders />} />
-                <Route path="products" element={<AdminProducts />} />
-              </Route>
-              
-              <Route path="/admin/login" element={<AdminLogin />} />
-            </Routes>
-          </MainLayout>
-        </BrowserRouter>
-      </CartProvider>
-    </AuthProvider>
+                {/* Admin Routes */}
+                <Route path="/admin" element={
+                  <ProtectedRoute adminOnly={true}>
+                    <AdminLayout />
+                  </ProtectedRoute>
+                }>
+                  <Route index element={<AdminDashboard />} />
+                  <Route path="users" element={<AdminUsers />} />
+                  <Route path="orders" element={<AdminOrders />} />
+                  <Route path="products" element={<AdminProducts />} />
+                </Route>
+                
+                <Route path="/admin/login" element={<AdminLogin />} />
+              </Routes>
+            </MainLayout>
+          </BrowserRouter>
+        </CartProvider>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }
 

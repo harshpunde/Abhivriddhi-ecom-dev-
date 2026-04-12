@@ -80,7 +80,8 @@
 /* Mobile */
 @media (max-width: 480px) {
   .terms-container {
-    padding: 140px 10px 40px; /* Shifted for mobile navbar */
+    padding: 140px 10px 40px;
+    /* Shifted for mobile navbar */
   }
 
   .terms-content {

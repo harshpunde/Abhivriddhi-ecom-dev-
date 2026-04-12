@@ -8,10 +8,10 @@ export function HeroSection() {
       {/* Background Image */}
       <div className="absolute inset-0">
         <img
-          src="images/hero-farmer.jpg"
+          src="/images/hero-farmer.jpg"
           alt="Farmer in wheat field"
           className="w-full h-full object-cover object-[center_20%]"
-          fetchpriority="high"
+          fetchPriority="high"
           decoding="sync"
         />
 

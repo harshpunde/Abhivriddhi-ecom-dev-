@@ -1,0 +1,157 @@
+/* ContactUs.css */
+
+.contact-container {
+  min-height: 100vh;
+  width: 100%;
+  margin: 0;
+  padding: 180px 20px 80px;
+  font-family: 'Inter', system-ui, sans-serif;
+  background: radial-gradient(circle at center, #f0f7e8 0%, #ffffff 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* ─── Hero Section ─────────────────────────────────────────── */
+.contact-hero {
+  text-align: center;
+  margin-bottom: 80px;
+  animation: fadeIn 0.8s ease-out;
+}
+
+.contact-hero h1 {
+  font-size: 3.5rem;
+  color: #2d4529;
+  font-weight: 700;
+  margin: 0 0 16px 0;
+}
+
+.hero-subtitle {
+  font-size: 1.5rem;
+  color: #6d7d6b;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+/* ─── Info Grid ────────────────────────────────────────────── */
+.contact-info-grid {
+  display: flex;
+  justify-content: center;
+  gap: 30px;
+  width: 100%;
+  max-width: 1200px;
+  flex-wrap: wrap;
+}
+
+.info-card {
+  background: white;
+  border-radius: 24px;
+  padding: 60px 30px 40px;
+  flex: 1;
+  min-width: 320px;
+  max-width: 380px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  position: relative;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.03);
+  transition: transform 0.3s ease;
+  margin-top: 40px; /* Space for the floating icon */
+}
+
+.info-card:hover {
+  transform: translateY(-10px);
+}
+
+.icon-wrapper {
+  position: absolute;
+  top: -50px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.icon-bg-inner {
+  width: 100px;
+  height: 100px;
+  background: white;
+  border-radius: 50%;
+  padding: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.icon-box {
+  width: 100%;
+  height: 100%;
+  background: #f8fafc;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #2d4529;
+}
+
+/* Specialized Icon Colors based on image */
+.info-card:nth-child(1) .icon-box { background: #3c5a32; color: white; }
+.info-card:nth-child(2) .icon-box { background: #f1f5f9; color: #f97316; }
+.info-card:nth-child(3) .icon-box { background: #f1f5f9; color: #4d7c0f; }
+
+.info-content h2 {
+  font-size: 1.5rem;
+  color: #2d4529;
+  font-weight: 700;
+  margin: 0 0 20px 0;
+}
+
+.info-content p {
+  font-size: 1.1rem;
+  color: #4b5563;
+  line-height: 1.6;
+  margin: 4px 0;
+}
+
+.info-content .highlight {
+  color: #1a1a1a;
+  font-weight: 600;
+}
+
+/* ─── Responsive ───────────────────────────────────────────── */
+@media (max-width: 1024px) {
+  .contact-hero h1 {
+    font-size: 3rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .contact-container {
+    padding-top: 140px;
+  }
+  
+  .contact-info-grid {
+    flex-direction: column;
+    align-items: center;
+    gap: 60px;
+  }
+
+  .info-card {
+    width: 90%;
+    max-width: 400px;
+  }
+
+  .contact-hero h1 {
+    font-size: 2.5rem;
+  }
+  
+  .hero-subtitle {
+    font-size: 1.2rem;
+    padding: 0 20px;
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
