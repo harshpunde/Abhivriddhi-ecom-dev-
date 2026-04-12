@@ -157,7 +157,10 @@ export default function ProductDetail() {
   };
 
   // Thumbnail images
-  const thumbnails = [product.imageUrl, product.imageUrl];
+  const thumbnails = [product.imageUrl];
+  if (product.backImageUrl) {
+    thumbnails.push(product.backImageUrl);
+  }
 
   return (
     <main className="pd-main">

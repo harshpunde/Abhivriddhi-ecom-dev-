@@ -12,10 +12,13 @@ const ProductModal = ({ product, onClose, onSuccess }) => {
   const [weights, setWeights] = useState([]);
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState('');
+  const [backImageFile, setBackImageFile] = useState(null);
+  const [backImagePreview, setBackImagePreview] = useState('');
   
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const fileInputRef = useRef(null);
+  const backFileInputRef = useRef(null);
 
   useEffect(() => {
     if (product) {
@@ -32,16 +35,26 @@ const ProductModal = ({ product, onClose, onSuccess }) => {
       }
       setWeights(Array.isArray(w) ? w : []);
       setImagePreview(product.imageUrl || '');
+      setBackImagePreview(product.backImageUrl || '');
     }
   }, [product]);
 
-  const handleImageChange = (e) => {
+  const handleImageChange = (e, type) => {
     const file = e.target.files[0];
     if (file) {
-      setImageFile(file);
+      if (type === 'front') {
+        setImageFile(file);
+      } else {
+        setBackImageFile(file);
+      }
+      
       const reader = new FileReader();
       reader.onloadend = () => {
-        setImagePreview(reader.result);
+        if (type === 'front') {
+          setImagePreview(reader.result);
+        } else {
+          setBackImagePreview(reader.result);
+        }
       };
       reader.readAsDataURL(file);
     }
@@ -82,6 +95,12 @@ const ProductModal = ({ product, onClose, onSuccess }) => {
         data.append('image', imageFile);
       } else if (product?.imageUrl && !product.imageUrl.startsWith('data:')) {
         data.append('imageUrl', product.imageUrl); 
+      }
+
+      if (backImageFile) {
+        data.append('backImage', backImageFile);
+      } else if (product?.backImageUrl && !product.backImageUrl.startsWith('data:')) {
+        data.append('backImageUrl', product.backImageUrl);
       }
 
       if (product) {
@@ -136,34 +155,65 @@ const ProductModal = ({ product, onClose, onSuccess }) => {
             <div className="space-y-6">
               
               {/* Image Upload Area */}
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">Product Image</label>
-                <div 
-                  onClick={() => fileInputRef.current?.click()}
-                  className="aspect-square w-full sm:aspect-video md:aspect-square bg-slate-50 border-2 border-dashed border-slate-300 rounded-xl overflow-hidden cursor-pointer hover:border-slate-400 hover:bg-slate-100 transition-colors relative flex justify-center items-center group"
-                >
-                  {imagePreview ? (
-                    <>
-                      <img 
-                        src={imagePreview.startsWith('data:') || imagePreview.startsWith('http') ? imagePreview : `${imagePreview}`} 
-                        alt="Preview" 
-                        className="w-full h-full object-cover" 
-                        onError={(e) => { e.target.src = '/placeholder.png'; }}
-                      />
-                      <div className="absolute inset-0 bg-slate-900/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                         <span className="text-white text-sm font-medium">Change Image</span>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">Front Image <span className="text-red-500">*</span></label>
+                  <div 
+                    onClick={() => fileInputRef.current?.click()}
+                    className="aspect-square w-full bg-slate-50 border-2 border-dashed border-slate-300 rounded-xl overflow-hidden cursor-pointer hover:border-slate-400 hover:bg-slate-100 transition-colors relative flex justify-center items-center group"
+                  >
+                    {imagePreview ? (
+                      <>
+                        <img 
+                          src={imagePreview.startsWith('data:') || imagePreview.startsWith('http') ? imagePreview : `${imagePreview}`} 
+                          alt="Front Preview" 
+                          className="w-full h-full object-cover" 
+                          onError={(e) => { e.target.src = '/placeholder.png'; }}
+                        />
+                        <div className="absolute inset-0 bg-slate-900/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                           <span className="text-white text-[10px] font-medium text-center px-1">Change Front Image</span>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="text-center p-2 flex flex-col items-center">
+                        <div className="w-8 h-8 rounded-full bg-white shadow-sm border border-slate-200 flex items-center justify-center mb-1 text-slate-400 group-hover:text-slate-600 transition-colors">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                        </div>
+                        <span className="text-[10px] font-medium text-slate-600">Upload Front</span>
                       </div>
-                    </>
-                  ) : (
-                    <div className="text-center p-6 flex flex-col items-center">
-                      <div className="w-10 h-10 rounded-full bg-white shadow-sm border border-slate-200 flex items-center justify-center mb-3 text-slate-400 group-hover:text-slate-600 transition-colors">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    )}
+                    <input ref={fileInputRef} type="file" accept="image/*" onChange={(e) => handleImageChange(e, 'front')} className="hidden" />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">Back Image</label>
+                  <div 
+                    onClick={() => backFileInputRef.current?.click()}
+                    className="aspect-square w-full bg-slate-50 border-2 border-dashed border-slate-300 rounded-xl overflow-hidden cursor-pointer hover:border-slate-400 hover:bg-slate-100 transition-colors relative flex justify-center items-center group"
+                  >
+                    {backImagePreview ? (
+                      <>
+                        <img 
+                          src={backImagePreview.startsWith('data:') || backImagePreview.startsWith('http') ? backImagePreview : `${backImagePreview}`} 
+                          alt="Back Preview" 
+                          className="w-full h-full object-cover" 
+                          onError={(e) => { e.target.src = '/placeholder.png'; }}
+                        />
+                        <div className="absolute inset-0 bg-slate-900/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                           <span className="text-white text-[10px] font-medium text-center px-1">Change Back Image</span>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="text-center p-2 flex flex-col items-center">
+                        <div className="w-8 h-8 rounded-full bg-white shadow-sm border border-slate-200 flex items-center justify-center mb-1 text-slate-400 group-hover:text-slate-600 transition-colors">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                        </div>
+                        <span className="text-[10px] font-medium text-slate-600">Upload Back</span>
                       </div>
-                      <span className="text-sm font-medium text-slate-600">Click to upload</span>
-                      <span className="text-xs text-slate-500 mt-1">PNG, JPG up to 5MB</span>
-                    </div>
-                  )}
-                  <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
+                    )}
+                    <input ref={backFileInputRef} type="file" accept="image/*" onChange={(e) => handleImageChange(e, 'back')} className="hidden" />
+                  </div>
                 </div>
               </div>
 
