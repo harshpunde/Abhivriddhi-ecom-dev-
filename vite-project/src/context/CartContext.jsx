@@ -29,8 +29,8 @@ export function CartProvider({ children }) {
   }, [cartItems]);
 
   const addToCart = (product) => {
-    const weight = product.weight || '500gm';
-    const unitPrice = product.unitPrice || product.price;
+    const weight = product.cartVariant || product.weight || 'Standard Size';
+    const unitPrice = product.cartPrice || product.unitPrice || product.price;
     // Map database fields to legacy fields if missing
     const pid = product.id || product._id;
     const pimg = product.img || product.imageUrl;

@@ -132,32 +132,6 @@ const CSS = `
     .co-form-body { padding:24px 16px !important; }
     .co-submit { width:100% !important; border-radius: 12px; font-size:15px; padding:16px; }
   }
-
-  /* Success State Redesign */
-  .co-success { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #0a0f12; padding: 24px; font-family: 'Inter', sans-serif; overflow: hidden; position: relative; }
-  .co-success::before { content: ''; position: absolute; top: -10%; right: -10%; width: 60%; height: 60%; background: radial-gradient(circle, rgba(16,185,129,0.05) 0%, transparent 70%); pointer-events: none; }
-  .co-success-card { background: #fff; padding: 60px 48px; border-radius: 48px; box-shadow: 0 40px 100px rgba(0,0,0,0.2); text-align: center; max-width: 560px; width: 100%; position: relative; border: 1px solid rgba(255,255,255,0.1); animation: fadeUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) both; }
-  .co-success-badge { display: inline-flex; align-items: center; gap: 8px; background: #f0fdf4; color: #166534; padding: 8px 16px; rounded-full; font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.1em; border: 1px solid #dcfce7; border-radius: 100px; margin-bottom: 32px; }
-  .co-check-ring { width: 96px; height: 96px; background: #1a3d0c; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 40px; border-radius: 36px; margin: 0 auto 32px; box-shadow: 0 20px 40px rgba(26,61,12,0.25); transform: rotate(-10deg); }
-  .co-success-card h2 { color: #0f172a; font-size: 42px; font-weight: 900; margin: 0 0 12px; tracking-tighter; letter-spacing: -0.02em; }
-  .co-order-id { color: #94a3b8; font-size: 13px; margin: 0 0 40px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
-  .co-order-id strong { color: #1a3d0c; background: #f1f5f9; padding: 4px 10px; border-radius: 8px; margin-left: 6px; }
-  .co-success-msg { color: #475569; font-size: 17px; line-height: 1.6; margin-bottom: 40px; font-weight: 500; }
-  .co-success-msg strong { color: #0f172a; font-weight: 800; }
-  .co-success-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding-top: 40px; border-top: 2px dashed #f1f5f9; }
-  .co-success-btn { display: flex; align-items: center; justify-content: center; height: 64px; border-radius: 20px; font-weight: 800; font-size: 15px; cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); text-decoration: none; border: none; }
-  .co-success-btn.primary { background: #1a3d0c; color: #fff; box-shadow: 0 10px 20px rgba(26,61,12,0.15); }
-  .co-success-btn.primary:hover { transform: translateY(-3px); box-shadow: 0 15px 30px rgba(26,61,12,0.25); background: #245110; }
-  .co-success-btn.secondary { background: #f8fafc; color: #475569; border: 2px solid #f1f5f9; }
-  .co-success-btn.secondary:hover { background: #fff; border-color: #cbd5e1; color: #1e293b; }
-  .co-download-link { display: block; margin-top: 24px; font-size: 13px; font-weight: 800; color: #1a3d0c; text-decoration: none; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.6; transition: opacity 0.2s; }
-  .co-download-link:hover { opacity: 1; }
-  
-  @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(40px) scale(0.95); }
-    to { opacity: 1; transform: translateY(0) scale(1); }
-  }
-
 `;
 
 function FormField({ label, required, error, children }) {
@@ -179,6 +153,7 @@ export default function CheckoutPage() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [orderId, setOrderId] = useState('');
+  const [paidAmount, setPaidAmount] = useState(0);
   const [errors, setErrors] = useState({});
 
   // Smart Validation States
@@ -353,7 +328,12 @@ export default function CheckoutPage() {
             }),
           });
           const data = await res.json();
-          if (data.success) { clearCart(); setOrderId(dbId || response.razorpay_payment_id); setSuccess(true); }
+          if (data.success) { 
+            setPaidAmount(total);
+            clearCart(); 
+            setOrderId(dbId || response.razorpay_payment_id); 
+            setSuccess(true); 
+          }
           else alert('Payment verification failed. Contact support.');
         } catch { alert('Verification error. Contact support.'); }
         setLoading(false);
@@ -381,12 +361,12 @@ export default function CheckoutPage() {
             landmark: form.landmark.trim(), city: form.city.trim(),
             state: form.state, pincode: form.pincode.trim(),
           },
-          cartItems: cartItems.map(i => ({ 
-            productId: String(i.id), 
-            name: i.name, 
-            price: i.unitPrice || i.price, 
-            quantity: i.qty, 
-            image: i.img || '' 
+          cartItems: cartItems.map(i => ({
+            productId: String(i.id),
+            name: i.name,
+            price: i.unitPrice || i.price,
+            quantity: i.qty,
+            image: i.img || ''
           })),
           totalAmount: total, userId,
         }),
@@ -401,35 +381,94 @@ export default function CheckoutPage() {
     }
   };
 
-  /* ─── Success screen (Redesigned) ─── */
+  /* Success state (Redesigned - Premium Centered Receipt) */
   if (success) return (
-    <div className="co-success">
-      <style>{CSS}</style>
-      <div className="co-success-card">
-        <div className="co-success-badge">
-           <span>✓ Transaction Secured</span>
+    <div className="co-success" style={{ background: 'linear-gradient(135deg, #f8fafc 0%, #f0fdf4 100%)', minHeight: '100vh', padding: '60px 20px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <style>{CSS + `
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap');
+        .co-receipt-card { background: #fff; border-radius: 28px; padding: 56px 40px; text-align: center; box-shadow: 0 40px 100px rgba(0,0,0,0.08); border: 1px solid rgba(74,124,35,0.06); max-width: 520px; width: 100%; animation: fadeUp 0.8s cubic-bezier(0.16, 1, 0.3, 1); font-family: 'Outfit', sans-serif; position: relative; overflow: hidden; }
+        .receipt-bg { position: absolute; top: -50px; right: -50px; width: 200px; height: 200px; background: radial-gradient(circle, rgba(74,124,35,0.04) 0%, transparent 70%); z-index: 0; }
+        
+        .co-check-ring { background: linear-gradient(135deg, #4a7c23, #1a3d0c); border-radius: 50%; width: 90px; height: 90px; display: flex; align-items: center; justify-content: center; margin: 0 auto 32px; color: #fff; box-shadow: 0 20px 40px rgba(74,124,35,0.2); z-index: 1; position: relative; }
+        .receipt-badge { display: inline-flex; align-items: center; gap: 8px; background: #f0fdf4; color: #166534; padding: 10px 18px; border-radius: 100px; font-weight: 800; font-size: 13px; margin-bottom: 24px; border: 1px solid #bbf7d0; text-transform: uppercase; letter-spacing: 1px; }
+        
+        .receipt-title { font-size: 38px; font-weight: 800; color: #1a3d0c; margin-bottom: 12px; letter-spacing: -1.5px; line-height: 1; }
+        .receipt-subtitle { color: #64748b; font-size: 16px; margin-bottom: 40px; line-height: 1.6; }
+        
+        .receipt-info-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 20px; padding: 24px; margin-bottom: 40px; text-align: left; }
+        .receipt-info-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px dashed #e2e8f0; }
+        .receipt-info-row:last-child { border-bottom: none; }
+        .receipt-info-label { color: #64748b; font-weight: 600; font-size: 14px; }
+        .receipt-info-value { color: #1a3d0c; font-weight: 800; font-size: 15px; }
+        .receipt-total { color: #4a7c23; font-size: 28px; font-weight: 800; }
+
+        .receipt-actions { display: grid; grid-template-columns: 1fr; gap: 16px; }
+        .receipt-btn { height: 64px; border-radius: 18px; display: flex; align-items: center; justify-content: center; gap: 12px; font-weight: 800; font-size: 16px; cursor: pointer; transition: all 0.3s; border: none; text-decoration: none; }
+        .receipt-btn.primary { background: #1a3d0c; color: #fff; box-shadow: 0 15px 30px rgba(26,61,12,0.15); }
+        .receipt-btn.primary:hover { transform: translateY(-3px); box-shadow: 0 20px 40px rgba(26,61,12,0.25); background: #2d5a15; }
+        .receipt-btn.secondary { background: #fff; color: #475569; border: 2px solid #e2e8f0; }
+        .receipt-btn.secondary:hover { transform: translateY(-2px); border-color: #1a3d0c; color: #1a3d0c; }
+        
+        .receipt-invoice-link { margin-top: 24px; color: #4a7c23; font-weight: 800; display: inline-flex; align-items: center; gap: 10px; text-decoration: none; font-size: 15px; transition: 0.2s; }
+        .receipt-invoice-link:hover { text-decoration: underline; color: #1a3d0c; }
+
+        @media (max-width: 600px) {
+          .co-receipt-card { padding: 40px 24px; }
+          .receipt-title { font-size: 32px; }
+        }
+      `}</style>
+      
+      <div className="co-receipt-card">
+        <div className="receipt-bg"></div>
+        <div className="receipt-badge">
+           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+           Confirmed
         </div>
         
         <div className="co-check-ring">
-           <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+           <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
         </div>
 
-        <h2>Order Authority Granted</h2>
-        <p className="co-order-id">REFERENCE IDENTIFIER <strong>#{String(orderId).slice(-10).toUpperCase()}</strong></p>
-        
-        <p className="co-success-msg">
-          Your allocation of <strong>Abhivriddhi Organics</strong> has been processed successfully. 
-          A confirmation dispatch has been sent to <strong>{form.email}</strong>.
+        <h1 className="receipt-title">Thank You!</h1>
+        <p className="receipt-subtitle">
+           We've received your organic order. A confirmation has been sent to <strong>{form.email}</strong>.
         </p>
-
-        <div className="co-success-actions">
-           <button onClick={() => navigate('/products')} className="co-success-btn primary">Marketplace</button>
-           <button onClick={() => navigate('/orders')} className="co-success-btn secondary">Track Asset</button>
+        
+        <div className="receipt-info-box">
+          <div className="receipt-info-row">
+             <span className="receipt-info-label">Order ID</span>
+             <span className="receipt-info-value">#{String(orderId).slice(-10).toUpperCase()}</span>
+          </div>
+          <div className="receipt-info-row">
+             <span className="receipt-info-label">Status</span>
+             <span className="receipt-info-value" style={{ color: '#4a7c23' }}>Paid & Ready</span>
+          </div>
+          <div className="receipt-info-row" style={{ marginTop: '12px', borderBottom: 'none' }}>
+             <span className="receipt-info-label" style={{ fontSize: '16px' }}>Total Amount</span>
+             <span className="receipt-total">₹{paidAmount.toLocaleString('en-IN')}</span>
+          </div>
         </div>
 
-        <a href={`${BASE_URL}/payment/invoice/${orderId}`} target="_blank" rel="noreferrer" className="co-download-link">
-          Download Official Invoice Protocol →
-        </a>
+        <div className="receipt-actions">
+           <button onClick={() => navigate('/products')} className="receipt-btn primary">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+              Continue Shopping
+           </button>
+           
+           <a 
+              href={`${BASE_URL}/payment/invoice/${orderId}`} 
+              target="_blank" 
+              rel="noreferrer" 
+              className="receipt-btn secondary"
+           >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Download Tax Invoice (PDF)
+           </a>
+        </div>
+
+        <button onClick={() => navigate('/orders')} className="receipt-invoice-link" style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
+           View Order History & Tracking →
+        </button>
       </div>
     </div>
   );

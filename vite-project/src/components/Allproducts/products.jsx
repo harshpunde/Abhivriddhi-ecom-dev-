@@ -85,36 +85,67 @@ function Sidebar({ availability, setAvailability, sortBy, setSortBy, category, s
 // ─── Product Card (Redesigned for Figma) ──────────────────────
 function ProductCard({ product }) {
   const navigate = useNavigate();
-  const { addToCart, cartItems } = useCart();
+  const { addToCart } = useCart();
   const [adding, setAdding] = useState(false);
-
-  const inCart = cartItems.some(i => i._id === product._id);
+  
+  let parsedWeights = product.weights;
+  if (typeof parsedWeights === 'string') {
+    try { parsedWeights = JSON.parse(parsedWeights); } 
+    catch (err) { parsedWeights = []; }
+  }
+  const hasVariants = parsedWeights && parsedWeights.length > 0;
 
   const handleAdd = (e) => {
     e.stopPropagation();
     setAdding(true);
-    addToCart(product);
+    
+    const defaultVariant = hasVariants ? parsedWeights[0].label : null;
+    const defaultPrice = hasVariants ? parsedWeights[0].price : product.price;
+
+    // Default to the first available variant for quick 'Add to Cart' action
+    const productToAdd = {
+      ...product,
+      cartVariant: defaultVariant,
+      cartPrice: Number(defaultPrice)
+    };
+    
+    addToCart(productToAdd);
     setTimeout(() => setAdding(false), 800);
   };
 
   return (
     <div
-      className={`product-card ${!product.inStock ? 'out-of-stock' : ''}`}
-      onClick={() => navigate(`/product/${product.id}`)}
+      className={`product-card ${!product.inStock ? 'out-of-stock' : ''} flex flex-col justify-between cursor-pointer`}
+      onClick={() => navigate(`/product/${product.id || product._id}`)}
     >
-      <div className="product-img-wrap">
-        <img src={product.img} alt={product.name} className="product-img" loading="lazy" decoding="async" />
+      <div>
+        <div className="product-img-wrap">
+          <img src={product.img || product.imageUrl} alt={product.name} className="product-img" loading="lazy" decoding="async" />
+        </div>
+        <div className="product-info px-4 pt-4 pb-2">
+          <h3 className="product-name font-bold text-gray-900 border-b-none mb-1">{product.name}</h3>
+          <p className="product-desc text-xs text-gray-500 line-clamp-2 min-h-[32px]">{product.description}</p>
+          
+          <div className="flex items-end justify-between mt-4">
+             <div className="flex flex-col">
+               <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{hasVariants ? 'Base Price' : 'Today\'s Price'}</span>
+               <span className="font-black text-[#1a3d0c] text-xl leading-none">₹{product.price}</span>
+             </div>
+          </div>
+        </div>
       </div>
-      <div className="product-info">
-        <h3 className="product-name">{product.name}</h3>
-        <p className="product-desc">{product.description}</p>
-        <p className="product-price">Price: ₹{product.price}/-</p>
+      
+      <div className="px-4 pb-4 mt-auto">
         <button
-          className="btn-add-cart"
+          className={`w-full py-3 rounded-xl font-bold transition-all shadow-sm flex items-center justify-center gap-2 ${adding ? 'bg-[#4a7c23] text-white' : 'bg-[#1a3d0c] hover:bg-[#2C7700] text-white hover:-translate-y-0.5 hover:shadow-md'} ${!product.inStock ? 'opacity-50 cursor-not-allowed' : ''}`}
           onClick={handleAdd}
-          disabled={!product.inStock}
+          disabled={!product.inStock || adding}
         >
-          {adding ? '✓ Added!' : 'Add to cart'}
+          {adding ? (
+            <>✓ <span className="text-sm">Added</span></>
+          ) : (
+            <><span className="text-lg leading-none">+</span> <span className="text-sm">Add to Cart</span></>
+          )}
         </button>
       </div>
     </div>

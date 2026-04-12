@@ -65,10 +65,10 @@ export default function ProductDetail() {
   const navigate = useNavigate();
   const { cartItems, cartOpen, setCartOpen, addToCart, updateQty, removeFromCart, totalItems } = useCart();
 
-  const [product, setProduct] = useState(null);
-  const [related, setRelated] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedWeight, setSelectedWeight] = useState(WEIGHT_OPTIONS[0]);
+  const [product, setProduct]               = useState(null);
+  const [related, setRelated]               = useState([]);
+  const [loading, setLoading]               = useState(true);
+  const [selectedWeight, setSelectedWeight] = useState(null);
   const [qty, setQty]                       = useState(1);
   const [activeThumb, setActiveThumb]       = useState(0);
   const [addedToCart, setAddedToCart]       = useState(false);
@@ -79,14 +79,28 @@ export default function ProductDetail() {
         setLoading(true);
         const data = await fetchProductById(id);
         if (data.success) {
-          setProduct(data.product);
+          let updatedProduct = data.product;
+          
+          // Fallback: If the backend returns 'weights' as a JSON string, parse it so .map() works
+          if (typeof updatedProduct.weights === 'string') {
+            try {
+              updatedProduct.weights = JSON.parse(updatedProduct.weights);
+            } catch (e) {
+              updatedProduct.weights = [];
+            }
+          }
+          
+          setProduct(updatedProduct);
+          if (updatedProduct.weights && updatedProduct.weights.length > 0) {
+             setSelectedWeight(updatedProduct.weights[0]);
+          }
           // Fetch related (ensure 4 items)
           const relatedData = await fetchProducts({ limit: 12 });
           if (relatedData.success) {
-            let filtered = relatedData.products.filter(p => p._id !== id);
+            let filtered = relatedData.products?.filter(p => p._id !== id) || [];
             // Prioritize same category
-            let sameCategory = filtered.filter(p => p.category === data.product.category);
-            let others = filtered.filter(p => p.category !== data.product.category);
+            let sameCategory = filtered.filter(p => p.category === updatedProduct.category);
+            let others = filtered.filter(p => p.category !== updatedProduct.category);
             
             let finalRelated = [...sameCategory, ...others].slice(0, 4);
             setRelated(finalRelated);
@@ -101,18 +115,7 @@ export default function ProductDetail() {
     loadProductData();
   }, [id]);
 
-  // Weight multiplier
-  const getWeightMultiplier = (weight) => {
-    switch (weight) {
-      case '500gm': return 1;
-      case '750gm': return 1.5;
-      case '1Kg': return 2;
-      default: return 1;
-    }
-  };
-
-  const multiplier = getWeightMultiplier(selectedWeight);
-  const unitPrice = product ? product.price * multiplier : 0;
+  const unitPrice = Number(selectedWeight ? selectedWeight.price : (product ? product.price : 0)) || 0;
   const totalPrice = unitPrice * qty;
 
   if (loading) {
@@ -137,11 +140,16 @@ export default function ProductDetail() {
   }
 
   const handleAddToCart = () => {
-    const baseItem = { ...product, weight: selectedWeight, unitPrice };
-    for (let i = 0; i < qty; i++) addToCart(baseItem);
+    const productToAdd = {
+      ...product,
+      cartVariant: selectedWeight ? selectedWeight.label : null,
+      cartPrice: Number(unitPrice)
+    };
+    for (let i = 0; i < qty; i++) addToCart(productToAdd);
     setAddedToCart(true);
     setTimeout(() => setAddedToCart(false), 1200);
   };
+
 
   const handleCheckout = () => {
     handleAddToCart();
@@ -201,21 +209,22 @@ export default function ProductDetail() {
               <p>{SHIPPING_INFO}</p>
             </Accordion>
 
-            {/* Weight Selection */}
-            <div className="pd-section">
-              <p className="pd-label">Select Weight</p>
-              <div className="pd-weights">
-                {WEIGHT_OPTIONS.map(w => (
-                  <button
-                    key={w}
-                    className={`pd-weight-btn ${selectedWeight === w ? 'selected' : ''}`}
-                    onClick={() => setSelectedWeight(w)}
-                  >
-                    {w}
-                  </button>
-                ))}
+            {Array.isArray(product.weights) && product.weights.length > 0 && (
+              <div className="pd-section">
+                <p className="pd-label">Select Weight / Variant</p>
+                <div className="pd-weights">
+                  {product.weights.map(w => (
+                    <button
+                      key={w.label || w}
+                      className={`pd-weight-btn ${(selectedWeight?.label === w.label) || (selectedWeight === w) ? 'selected' : ''}`}
+                      onClick={() => setSelectedWeight(w)}
+                    >
+                      {w.label || w}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
             <div className="pd-section">
               <p className="pd-label">Quantity</p>
@@ -241,7 +250,7 @@ export default function ProductDetail() {
             {/* Dynamic Unit Price */}
             <div className="pd-section">
               <p className="pd-label">Unit Price</p>
-              <p className="pd-price">₹{unitPrice.toFixed(0)} /- per {selectedWeight}</p>
+              <p className="pd-price">₹{unitPrice.toFixed(0)} /- {selectedWeight?.label ? `per ${selectedWeight.label}` : 'each'}</p>
             </div>
 
             {/* Total Price */}

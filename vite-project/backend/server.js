@@ -1,18 +1,44 @@
 // Server last updated: 2026-04-09T03:30 — Twilio SMS active
+console.log('🚀 [System] Backend boot sequence initiated...');
 const express = require('express');
+console.log('  - modules loaded: express');
 const compression = require('compression');
+console.log('  - modules loaded: compression');
 const mongoose = require('mongoose');
+console.log('  - modules loaded: mongoose');
 const cors = require('cors');
+console.log('  - modules loaded: cors');
 const helmet = require('helmet');
+console.log('  - modules loaded: helmet');
 const rateLimit = require('express-rate-limit');
+console.log('  - modules loaded: rate-limit');
 require('dotenv').config();
+console.log('  - config loaded: dotenv');
+
+// --- CRASH PROTECTION ---
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('\n⚠️ [SYSTEM] UNHANDLED REJECTION:', reason);
+  // Keep server running - don't let isolated library failures crash the app
+});
+
+process.on('uncaughtException', (err) => {
+  console.error('\n⚠️ [SYSTEM] UNCAUGHT EXCEPTION:', err.message);
+  // Log and monitor, but keep process alive if safe
+});
+// ------------------------
 
 const authRoutes = require('./routes/auth');
+console.log('  - routes loaded: auth');
 const userRoutes = require('./routes/users');
+console.log('  - routes loaded: users');
 const paymentRoutes = require('./routes/payment');
+console.log('  - routes loaded: payment');
 const productRoutes = require('./routes/products');
+console.log('  - routes loaded: products');
 const User = require('./models/User');
+console.log('  - models loaded: User');
 const { initializeWhatsApp } = require('./utils/whatsappService');
+console.log('  - services loaded: whatsappService');
 
 const app = express();
 
@@ -55,14 +81,14 @@ const seedAdmin = async () => {
     if (!adminExists) {
       console.log('No admin found. Creating default admin...');
       await User.create({
-        name: 'Master Admin',
-        email: 'admin@abhivriddhi.com',
+        name: 'Abhivriddhi Admin',
+        email: 'abhivriddhiorganics@gmail.com',
         mobile: '+919999999999',
-        password: 'abhivriddhi123',
+        password: 'adminPassword123!',
         role: 'admin',
         isVerified: true
       });
-      console.log('Default admin created: admin@abhivriddhi.com / abhivriddhi123');
+      console.log('Default admin created: abhivriddhiorganics@gmail.com / adminPassword123!');
     }
   } catch (err) {
     console.error('Admin seeding failed:', err.message);
@@ -82,6 +108,10 @@ app.use('/api/users', userRoutes);
 app.use('/api/payment', paymentRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/admin', require('./routes/admin'));
+
+// Serve uploaded product images statically
+const path = require('path');
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Health check
 app.get('/api/health', (req, res) => {
@@ -112,7 +142,9 @@ app.listen(PORT, () => {
   console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
   
   // Initialize WhatsApp Bot
-  initializeWhatsApp();
+  setImmediate(() => {
+    initializeWhatsApp();
+  });
 });
 
 module.exports = app;

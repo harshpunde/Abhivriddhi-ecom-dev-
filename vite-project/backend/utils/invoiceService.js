@@ -49,7 +49,7 @@ const generateInvoiceHTML = (order) => {
   const sa = order.shippingAddress || {};
   const date = new Date(order.createdAt || Date.now()).toLocaleDateString('en-GB');
   
-  // Logo Processing
+  // Logo Processing (Restored Local Logo for Branding)
   let logoBase64 = '';
   try {
     const logoPath = path.join(__dirname, 'logo.png');
@@ -58,10 +58,11 @@ const generateInvoiceHTML = (order) => {
       logoBase64 = `data:image/png;base64,${logoData.toString('base64')}`;
     }
   } catch (err) {
-    console.error('Error reading logo file:', err);
+    console.error('❌ [Logo] Error reading local logo file:', err.message);
   }
-  
-  // Tax Calculations (Assuming 5% GST: 2.5% CGST + 2.5% SGST)
+
+  // Final Logo Asset
+  const invoiceLogo = logoBase64 || 'https://i.ibb.co/vzB7pBq/abhivriddhi-logo.png';
   const gstRate = 0.05;
   const netTotal = order.totalAmount / (1 + gstRate);
   const totalTax = order.totalAmount - netTotal;
@@ -143,8 +144,8 @@ const generateInvoiceHTML = (order) => {
     <div class="container">
       <div class="header">
         <div class="logo">
-          ${logoBase64 ? `<img src="${logoBase64}" style="height: 60px; object-fit: contain;" />` : `<h1>🫘 Abhivriddhi Organics</h1>`}
-          <p style="margin-top: -5px; color: #4a7c23; font-weight: bold;">Pure • Natural • Traditional</p>
+          <img src="${invoiceLogo}" style="height: 65px; object-fit: contain;" />
+          <p style="margin-top: 5px; color: #4a7c23; font-weight: bold;">Pure • Natural • Traditional</p>
         </div>
         <div class="invoice-title">
           <h1>Tax Invoice / Bill of Supply</h1>
@@ -239,13 +240,26 @@ const generateInvoicePDF = async (order) => {
   let browser = null;
 
   try {
+    console.log(`[Invoice] Starting PDF generation for Order: ${order._id}`);
+    
     browser = await puppeteer.launch({
-      headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
+      headless: 'new', // Use stable 'new' headless mode
+      args: [
+        '--no-sandbox', 
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-extensions'
+      ],
+      timeout: 15000 // 15s timeout
     });
     
     const page = await browser.newPage();
-    await page.setContent(html, { waitUntil: 'networkidle0' });
+    
+    // Use a shorter timeout for navigation
+    await page.setContent(html, { 
+      waitUntil: 'networkidle0',
+      timeout: 10000 
+    });
     
     const pdfBuffer = await page.pdf({
       format: 'A4',
@@ -253,10 +267,12 @@ const generateInvoicePDF = async (order) => {
       margin: { top: '0px', right: '0px', bottom: '0px', left: '0px' }
     });
 
+    console.log(`✅ [Invoice] PDF generated successfully for Order: ${order._id}`);
     return pdfBuffer;
   } catch (error) {
-    console.error('PDF Generation Error:', error);
-    throw error;
+    console.error('❌ [Invoice] PDF Generation Error:', error.message);
+    // If PDF fails, we return null to signal the route to fallback to HTML
+    return null;
   } finally {
     if (browser) {
       await browser.close();

@@ -29,9 +29,9 @@ const AdminProducts = () => {
 
   const handleToggleStock = async (product) => {
     try {
-      const data = await api.put(`/admin/products/${product._id}`, { inStock: !product.inStock });
+      const data = await api.put(`/admin/products/${product._id || product.id}`, { inStock: !product.inStock });
       if (data.success) {
-        setProducts(products.map(p => p._id === product._id ? data.product : p));
+        setProducts(products.map(p => (p._id === product._id || p.id === product.id) ? data.product : p));
       }
     } catch (err) {
       alert('Failed to update stock status');
@@ -43,7 +43,7 @@ const AdminProducts = () => {
     try {
       const data = await api.delete(`/admin/products/${id}`);
       if (data.success) {
-        setProducts(products.filter(p => p._id !== id));
+        setProducts(products.filter(p => p._id !== id && p.id !== id));
       }
     } catch (err) {
       alert('Failed to delete product');
@@ -56,104 +56,126 @@ const AdminProducts = () => {
   );
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+    <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 space-y-6 font-sans text-slate-900 bg-slate-50 min-h-screen">
+      
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-black text-gray-900 tracking-tight">Product Catalog</h1>
-          <p className="text-gray-500 font-medium mt-1">Manage your inventory and pricing</p>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Products</h1>
+          <p className="text-sm text-slate-500 mt-1">Manage inventory, pricing, and availability.</p>
         </div>
         <button 
           onClick={() => { setCurrentProduct(null); setShowModal(true); }}
-          className="bg-[#1a3d0c] text-white px-8 py-4 rounded-2xl font-black text-sm shadow-lg hover:shadow-2xl hover:bg-[#2C7700] hover:-translate-y-1 transition-all duration-300"
+          className="px-4 py-2 bg-slate-900 text-white font-medium text-sm rounded-lg shadow-sm hover:bg-slate-800 transition-colors inline-flex items-center gap-2"
         >
-          + Add New Product
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          Add Product
         </button>
       </div>
 
-      {/* Toolbar */}
-      <div className="bg-white p-4 rounded-3xl shadow-sm border border-gray-100 flex flex-col md:flex-row gap-4 items-center">
-        <div className="relative flex-1 w-full">
-          <span className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
-          <input 
-            type="text"
-            placeholder="Search by name or category..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-12 pr-6 py-4 rounded-2xl bg-gray-50 border-none outline-none focus:ring-2 focus:ring-[#4a7c23]/20 font-semibold text-gray-700"
-          />
+      {/* Main Content Area */}
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
+        
+        {/* Toolbar */}
+        <div className="p-4 border-b border-slate-200">
+           <div className="relative max-w-md">
+             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+             </span>
+             <input 
+               type="text"
+               placeholder="Search by name or category..."
+               value={searchTerm}
+               onChange={(e) => setSearchTerm(e.target.value)}
+               className="w-full pl-10 pr-4 py-2 rounded-lg bg-slate-50 border border-slate-300 text-sm outline-none focus:border-slate-400 focus:bg-white transition-colors"
+             />
+           </div>
         </div>
-      </div>
 
-      {loading ? (
-        <div className="flex justify-center py-40">
-          <div className="w-12 h-12 border-4 border-emerald-100 border-t-emerald-600 rounded-full animate-spin"></div>
-        </div>
-      ) : (
-        <div className="bg-white rounded-[40px] shadow-sm border border-gray-100 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-gray-50/50 text-gray-400 font-black text-[10px] uppercase tracking-[0.2em] border-b border-gray-100">
-                  <th className="px-10 py-6">Product Information</th>
-                  <th className="px-10 py-6">Classification</th>
-                  <th className="px-10 py-6">Stock Level</th>
-                  <th className="px-10 py-6">Valuation</th>
-                  <th className="px-10 py-6 text-right">Control</th>
+        {/* Table */}
+        <div className="overflow-x-auto">
+          {loading ? (
+             <div className="flex items-center justify-center p-20">
+                <div className="w-8 h-8 border-4 border-slate-200 border-t-slate-800 rounded-full animate-spin"></div>
+             </div>
+          ) : (
+            <table className="w-full text-left text-sm whitespace-nowrap">
+              <thead className="bg-slate-50 text-slate-500 font-medium border-b border-slate-200">
+                <tr>
+                  <th className="px-6 py-3 font-medium">Product</th>
+                  <th className="px-6 py-3 font-medium">Category</th>
+                  <th className="px-6 py-3 font-medium">Status</th>
+                  <th className="px-6 py-3 font-medium">Pricing / Variants</th>
+                  <th className="px-6 py-3 font-medium text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-slate-100">
                 {filteredProducts.map(product => (
-                  <tr key={product._id || Math.random()} className="hover:bg-emerald-50/30 transition-all duration-300 group">
-                    <td className="px-10 py-7">
-                      <div className="flex items-center gap-6">
-                        <div className="w-16 h-16 rounded-3xl overflow-hidden bg-gray-50 border border-gray-100 shadow-inner flex-shrink-0 group-hover:scale-105 transition-transform duration-500">
-                          <img src={product.img || '/placeholder.png'} alt="" className="w-full h-full object-cover" />
+                  <tr key={product._id || product.id} className="hover:bg-slate-50 transition-colors">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-lg overflow-hidden bg-slate-100 border border-slate-200 flex-shrink-0">
+                          {/* Use proxy URL reliably. Default placeholder on broken image */}
+                          <img 
+                            src={product.imageUrl ? (product.imageUrl.startsWith('http') ? product.imageUrl : `${product.imageUrl}`) : '/placeholder.png'} 
+                            alt="" 
+                            className="w-full h-full object-cover" 
+                            onError={(e) => { e.target.src = '/placeholder.png'; }}
+                          />
                         </div>
-                        <div className="min-w-0">
-                          <div className="font-black text-gray-900 text-lg leading-tight truncate">{product.name}</div>
-                          <div className="text-[10px] text-emerald-600 font-black mt-2 uppercase tracking-[0.15em] bg-emerald-50 px-2.5 py-1 rounded-lg inline-block">
-                            REF: {product._id ? product._id.slice(-8).toUpperCase() : 'NEW-ITEM'}
-                          </div>
+                        <div>
+                          <div className="font-medium text-slate-900">{product.name}</div>
+                          <div className="text-xs text-slate-500 mt-0.5 max-w-[200px] truncate">{product.description}</div>
                         </div>
                       </div>
                     </td>
-                    <td className="px-10 py-7">
-                      <span className="px-4 py-1.5 rounded-xl text-[10px] font-black bg-gray-100 text-gray-500 border border-gray-200 uppercase tracking-widest group-hover:bg-emerald-600 group-hover:text-white group-hover:border-transparent transition-all">
+                    <td className="px-6 py-4 text-slate-700">
+                      <span className="bg-slate-100 border border-slate-200 px-2.5 py-1 rounded-md text-xs font-medium">
                         {product.category}
                       </span>
                     </td>
-                    <td className="px-10 py-7">
+                    <td className="px-6 py-4">
                       <button 
                         onClick={() => handleToggleStock(product)}
-                        className={`group/btn flex items-center gap-2.5 px-4 py-2 rounded-2xl text-[10px] font-black transition-all border ${
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-colors border ${
                           product.inStock 
-                            ? 'bg-emerald-50 text-emerald-700 border-emerald-100 hover:bg-emerald-100' 
-                            : 'bg-red-50 text-red-700 border-red-100 hover:bg-red-100'
+                            ? 'bg-green-50 text-green-700 border-green-200 hover:bg-green-100' 
+                            : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
                         }`}
                       >
-                        <div className={`w-2 h-2 rounded-full animate-pulse ${product.inStock ? 'bg-emerald-500' : 'bg-red-500'}`} />
-                        {product.inStock ? 'DASHBOARD ACTIVE' : 'HIDDEN'}
+                        <div className={`w-1.5 h-1.5 rounded-full ${product.inStock ? 'bg-green-500' : 'bg-slate-400'}`} />
+                        {product.inStock ? 'Active' : 'Draft'}
                       </button>
                     </td>
-                    <td className="px-10 py-7">
-                      <div className="font-black text-gray-900 text-xl tracking-tighter">₹{product.price?.toLocaleString()}</div>
-                      <div className="text-[9px] text-gray-400 font-bold uppercase tracking-widest mt-1">Per Unit</div>
+                    <td className="px-6 py-4">
+                      <div className="font-medium text-slate-900">₹{product.price}</div>
+                      {(() => {
+                        let w = product.weights;
+                        if (typeof w === 'string') {
+                          try { w = JSON.parse(w); } catch(e) { w = []; }
+                        }
+                        return w?.length > 0 ? (
+                          <div className="text-xs text-slate-500 mt-1">
+                            {w.length} Variants Configured
+                          </div>
+                        ) : null;
+                      })()}
                     </td>
-                    <td className="px-10 py-7 text-right">
-                      <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity translate-x-2 group-hover:translate-x-0 transition-transform duration-300">
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex items-center justify-end gap-2">
                         <button 
                           onClick={() => { setCurrentProduct(product); setShowModal(true); }}
-                          className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-2xl transition-all border border-transparent hover:border-emerald-100"
-                          title="Edit Portfolio"
+                          className="p-1.5 text-slate-500 hover:text-slate-900 bg-white border border-slate-200 hover:bg-slate-50 rounded-md transition-colors"
+                          title="Edit Product"
                         >
-                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                         </button>
                         <button 
-                          onClick={() => handleDelete(product._id)}
-                          className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-2xl transition-all border border-transparent hover:border-red-100"
-                          title="Evict Product"
+                          onClick={() => handleDelete(product._id || product.id)}
+                          className="p-1.5 text-slate-500 hover:text-red-700 bg-white border border-slate-200 hover:bg-red-50 hover:border-red-200 rounded-md transition-colors"
+                          title="Delete Product"
                         >
-                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                         </button>
                       </div>
                     </td>
@@ -161,18 +183,16 @@ const AdminProducts = () => {
                 ))}
                 {filteredProducts.length === 0 && (
                   <tr>
-                    <td colSpan="5" className="px-10 py-40 text-center">
-                      <div className="text-7xl mb-6 grayscale opacity-20 filter drop-shadow-xl">📦</div>
-                      <div className="text-gray-400 font-black text-2xl tracking-tight">No Inventory Matches</div>
-                      <p className="text-gray-300 font-bold mt-2">Adjust your filters or add a fresh product to the vault.</p>
+                    <td colSpan="5" className="px-6 py-12 text-center text-slate-500 text-sm">
+                       No products found matching your criteria.
                     </td>
                   </tr>
                 )}
               </tbody>
             </table>
-          </div>
+          )}
         </div>
-      )}
+      </div>
 
       {showModal && (
         <ProductModal 

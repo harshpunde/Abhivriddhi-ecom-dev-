@@ -1,12 +1,20 @@
+export const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:2000';
 const BASE_URL = import.meta.env.VITE_API_URL ?? '/api';
+
 
 const request = async (endpoint, options = {}) => {
   const token = localStorage.getItem('token');
+  
+  // Create headers object
   const headers = {
-    'Content-Type': 'application/json',
     ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
     ...(options.headers || {})
   };
+
+  // Only add content-type: application/json if not sending FormData
+  if (!(options.body instanceof FormData)) {
+    headers['Content-Type'] = 'application/json';
+  }
 
   const response = await fetch(`${BASE_URL}${endpoint}`, {
     ...options,
@@ -119,11 +127,24 @@ export const adminDeleteProduct = (id) => request(`/admin/products/${id}`, {
 
 export const adminFetchStats = () => request('/admin/stats/advanced');
 
+// ─── WhatsApp & Sub-Admin Management ────────────────────────
+export const getWhatsAppStatus = () => request('/admin/whatsapp/status');
+export const relinkWhatsApp = () => request('/admin/whatsapp/relink', { method: 'POST' });
+export const hardResetWhatsApp = () => request('/admin/whatsapp/hard-reset', { method: 'POST' });
+export const fetchSubAdmins = () => request('/admin/sub-admins');
+export const createSubAdmin = (payload) => request('/admin/sub-admins', {
+  method: 'POST',
+  body: JSON.stringify(payload)
+});
+export const deleteSubAdmin = (id) => request(`/admin/sub-admins/${id}`, {
+  method: 'DELETE'
+});
+
 // Default export for unified access (used by Admin components)
 const api = {
   get: (url) => request(url, { method: 'GET' }),
-  post: (url, data) => request(url, { method: 'POST', body: JSON.stringify(data) }),
-  put: (url, data) => request(url, { method: 'PUT', body: JSON.stringify(data) }),
+  post: (url, data) => request(url, { method: 'POST', body: data instanceof FormData ? data : JSON.stringify(data) }),
+  put: (url, data) => request(url, { method: 'PUT', body: data instanceof FormData ? data : JSON.stringify(data) }),
   delete: (url) => request(url, { method: 'DELETE' }),
 };
 

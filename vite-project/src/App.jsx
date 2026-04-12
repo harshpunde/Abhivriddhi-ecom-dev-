@@ -33,6 +33,8 @@ const AdminUsers = lazy(() => import('./components/Admin/AdminUsers'));
 const AdminOrders = lazy(() => import('./components/Admin/AdminOrders'));
 const AdminProducts = lazy(() => import('./components/Admin/AdminProducts'));
 const AdminLogin = lazy(() => import('./components/Admin/AdminLogin'));
+const AdminSubAdmins = lazy(() => import('./components/Admin/AdminSubAdmins'));
+const AdminWhatsApp = lazy(() => import('./components/Admin/AdminWhatsApp'));
 
 function MainLayout({ children }) {
   const { cartItems, cartOpen, setCartOpen, updateQty, removeFromCart, totalItems } = useCart();
@@ -139,6 +141,8 @@ function App() {
                   <Route path="users" element={<AdminUsers />} />
                   <Route path="orders" element={<AdminOrders />} />
                   <Route path="products" element={<AdminProducts />} />
+                  <Route path="sub-admins" element={<AdminSubAdmins />} />
+                  <Route path="whatsapp" element={<AdminWhatsApp />} />
                 </Route>
                 
                 <Route path="/admin/login" element={<AdminLogin />} />

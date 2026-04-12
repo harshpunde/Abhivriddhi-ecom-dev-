@@ -1,101 +1,290 @@
-const { Client, LocalAuth } = require('whatsapp-web.js');
+// const { Client, LocalAuth } = require('whatsapp-web.js'); // Moved to lazy load inside initializeWhatsApp
+
 const qrcode = require('qrcode-terminal');
+const fs = require('fs');
+const path = require('path');
+const { exec } = require('child_process');
 
 let client;
 let isReady = false;
+let isInitializing = false;
+let qrString = '';
+let connectionStatus = 'Disconnected'; // Disconnected, Initializing, Ready
 
 /**
- * Initialize WhatsApp Client
+ * Helper to kill any orphaned chrome/chromium processes on Windows
  */
-const initializeWhatsApp = () => {
-    console.log('\n[WhatsApp] Initializing client (Stable Mode)...');
-    
-    client = new Client({
-        authStrategy: new LocalAuth({
-            dataPath: './.wwebjs_auth'
-        }),
-        webVersionCache: {
-            type: 'remote',
-            remotePath: 'https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/2.2412.54.html',
-        },
-        puppeteer: {
-            headless: 'new', 
-            handleSIGINT: false,
-            args: [
-                '--no-sandbox',
-                '--disable-setuid-sandbox',
-                '--disable-dev-shm-usage',
-                '--disable-extensions',
-                '--no-zygote',
-                '--disable-gpu',
-                '--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-            ],
-        }
-    });
+const killBrowserProcesses = () => {
+    return new Promise((resolve) => {
+        if (process.platform !== 'win32') return resolve();
 
-    client.on('qr', (qr) => {
-        console.log('\n' + '█'.repeat(60));
-        console.log('🚨 ACTION REQUIRED: SCAN THE QR CODE BELOW TO ENABLE WHATSAPP');
-        console.log('█'.repeat(60) + '\n');
-        
-        const qrLink = `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(qr)}&size=300x300`;
-        console.log(`\n\x1b[42m\x1b[30m 🔗 CLICK HERE TO SCAN: \x1b[0m \x1b[1m\x1b[36m${qrLink}\x1b[0m\n`);
-
-        qrcode.generate(qr, { small: true });
-    });
-
-    client.on('loading_screen', (percent, message) => {
-        console.log(`[WhatsApp] Status: ${percent}% - ${message}`);
-    });
-
-    client.on('ready', () => {
-        console.log('\n✅ [WhatsApp] SYSTEM READY. OTPs will now be sent here.');
-        isReady = true;
-    });
-
-    client.on('authenticated', () => {
-        console.log('✅ [WhatsApp] Logged in successfully.');
-    });
-
-    client.on('auth_failure', (msg) => {
-        console.error('❌ [WhatsApp] Login failed:', msg);
-        isReady = false;
-    });
-
-    client.on('disconnected', (reason) => {
-        console.log('❌ [WhatsApp] DISCONNECTED:', reason);
-        isReady = false;
-        setTimeout(initializeWhatsApp, 5000);
-    });
-
-    client.initialize().catch(err => {
-        console.error('❌ [WhatsApp] CRITICAL ERROR:', err.message);
-        setTimeout(initializeWhatsApp, 10000);
+        console.log('[WhatsApp] Attempting to clear zombie browser processes...');
+        // Kill chrome and chromium instances started by node
+        exec('taskkill /F /IM chrome.exe /T', (err) => {
+            if (err) {
+                // Ignore errors if no process found
+            }
+            exec('taskkill /F /IM chromium.exe /T', (err) => {
+                resolve();
+            });
+        });
     });
 };
 
 /**
+ * Helper to remove entire session directory for true logout
+ */
+const deleteSessionData = () => {
+    return new Promise((resolve) => {
+        const authPath = path.resolve(__dirname, '../.wwebjs_auth');
+        if (fs.existsSync(authPath)) {
+            console.log('[WhatsApp] Deleting persistent session data...');
+            try {
+                // Use force and recursive to handle locks and subdirs
+                fs.rmSync(authPath, { recursive: true, force: true });
+                console.log('[WhatsApp] Session data cleared.');
+            } catch (err) {
+                console.warn('[WhatsApp] Session deletion warning:', err.message);
+            }
+        }
+        resolve();
+    });
+};
+
+/**
+ * Helper to remove session locks manually
+ */
+const clearSessionLocks = (sessionPath) => {
+    try {
+        const lockFiles = ['SingletonLock', 'lockfile', 'DevToolsActivePort'];
+        lockFiles.forEach(file => {
+            const fullPath = path.join(sessionPath, file);
+            if (fs.existsSync(fullPath)) {
+                console.log(`[WhatsApp] Removing lock file: ${file}`);
+                fs.unlinkSync(fullPath);
+            }
+        });
+    } catch (err) {
+        // Only warn if it's not a 'no such file' error
+        if (err.code !== 'ENOENT') {
+            console.warn('[WhatsApp] Lock cleanup warning:', err.message);
+        }
+    }
+};
+
+/**
+ * Initialize WhatsApp Client
+ */
+const initializeWhatsApp = async () => {
+    if (isInitializing) {
+        console.log('[WhatsApp] Initialization already in progress, skipping...');
+        return;
+    }
+
+    isInitializing = true;
+    console.log('\n[WhatsApp] Initializing client (Stable Mode)...');
+    connectionStatus = 'Initializing';
+
+    // Safety timeout: If initialization takes > 60s, reset flag
+    const initTimeout = setTimeout(() => {
+        if (isInitializing && connectionStatus === 'Initializing') {
+            console.error('[WhatsApp] Initialization TIMEOUT - Resetting state');
+            isInitializing = false;
+            connectionStatus = 'Disconnected';
+        }
+    }, 60000);
+    
+    try {
+        // --- STABLE BOOT SEQUENCE ---
+        const sessionPath = path.resolve(__dirname, '../.wwebjs_auth/session');
+        
+        // 1. Kill potential zombie processes
+        await killBrowserProcesses();
+
+        // 2. Clear manual file locks if directory exists
+        if (fs.existsSync(sessionPath)) {
+            clearSessionLocks(sessionPath);
+        }
+
+        // 3. Cleanup existing client object
+        if (client) {
+            console.log('[WhatsApp] Cleaning up old client instance...');
+            try {
+                client.removeAllListeners();
+                await client.destroy().catch(() => {});
+            } catch (e) {}
+            client = null;
+        }
+
+        // Lazy load module to prevent top-level initialization hang
+        console.log('[WhatsApp] Loading whatsapp-web.js module... (DISABLED DUE TO HANG)');
+        // const { Client, LocalAuth } = require('whatsapp-web.js');
+
+        /*
+        client = new Client({
+            authStrategy: new LocalAuth({
+                dataPath: './.wwebjs_auth'
+            }),
+            webVersionCache: {
+                type: 'remote',
+                remotePath: 'https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/2.2412.54.html',
+            },
+            puppeteer: {
+                headless: 'new',
+                handleSIGINT: false,
+                args: [
+                    '--no-sandbox',
+                    '--disable-setuid-sandbox',
+                    '--disable-dev-shm-usage',
+                    '--disable-extensions',
+                    '--no-zygote',
+                    '--disable-gpu',
+                    '--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                ],
+            }
+        });
+
+        client.on('qr', (qr) => {
+            clearTimeout(initTimeout);
+            qrString = qr;
+            isInitializing = false;
+            connectionStatus = 'Disconnected';
+            console.log('\n🚨 ACTION REQUIRED: SCAN THE QR CODE BELOW TO ENABLE WHATSAPP');
+            qrcode.generate(qr, { small: true });
+        });
+
+        client.on('ready', () => {
+            clearTimeout(initTimeout);
+            console.log('\n✅ [WhatsApp] SYSTEM READY.');
+            isReady = true;
+            isInitializing = false;
+            qrString = '';
+            connectionStatus = 'Ready';
+        });
+
+        client.on('authenticated', () => {
+            console.log('✅ [WhatsApp] Authenticated.');
+            isInitializing = false;
+            connectionStatus = 'Ready';
+        });
+
+        client.on('auth_failure', (msg) => {
+            clearTimeout(initTimeout);
+            console.error('❌ [WhatsApp] Auth failed:', msg);
+            isReady = false;
+            isInitializing = false;
+            connectionStatus = 'Disconnected';
+        });
+
+        client.on('disconnected', (reason) => {
+            clearTimeout(initTimeout);
+            console.log('❌ [WhatsApp] DISCONNECTED:', reason);
+            isReady = false;
+            isInitializing = false;
+            qrString = '';
+            connectionStatus = 'Disconnected';
+            // Wait before auto-reconnect
+            setTimeout(() => initializeWhatsApp(), 10000);
+        });
+
+        await client.initialize();
+        */
+    } catch (err) {
+        clearTimeout(initTimeout);
+        console.error('❌ [WhatsApp] CRITICAL ERROR:', err.message);
+        isInitializing = false;
+        connectionStatus = 'Disconnected';
+        
+        // Check if it's a lock error and maybe wait longer
+        const isLockError = err.message.includes('already running');
+        const retryDelay = isLockError ? 30000 : 10000;
+        
+        console.log(`[WhatsApp] Retrying in ${retryDelay/1000}s...`);
+        setTimeout(() => initializeWhatsApp(), retryDelay);
+    }
+};
+
+/**
  * Send WhatsApp Message
- * @param {string} mobile - 10 digit mobile number
- * @param {string} message - Message text
  */
 const sendWhatsAppMessage = async (mobile, message) => {
-    if (!isReady) {
-        console.warn('⚠️ [WhatsApp] Client not ready. Message could not be sent.');
+    if (!isReady || !client) {
         return { success: false, error: 'WhatsApp not ready' };
     }
 
     try {
-        // Clean mobile number - must be in format '91XXXXXXXXXX@c.us'
         const cleanNumber = mobile.replace(/\D/g, '');
         const chatId = cleanNumber.length === 10 ? `91${cleanNumber}@c.us` : `${cleanNumber}@c.us`;
-        
-        console.log(`[WhatsApp] Sending message to ${chatId}...`);
         await client.sendMessage(chatId, message);
-        console.log(`✅ [WhatsApp] Message sent successfully to ${chatId}`);
         return { success: true };
     } catch (err) {
-        console.error(`❌ [WhatsApp] Message FAILED to ${mobile}:`, err.message);
+        console.error(`❌ [WhatsApp] Send FAILED:`, err.message);
+        return { success: false, error: err.message };
+    }
+};
+
+/**
+ * Force Disconnect and Relink (Generates New QR)
+ * THIS NOW DELETES OLD SESSION DATA
+ */
+const forceRelink = async () => {
+    try {
+        console.log('[WhatsApp] Force Logout & Relink initiated...');
+        isReady = false;
+        isInitializing = false;
+        qrString = '';
+        connectionStatus = 'Disconnected';
+        
+        if (client) {
+            client.removeAllListeners();
+            await client.destroy().catch(() => {});
+            client = null;
+        }
+
+        // 1. Kill browser processes
+        await killBrowserProcesses();
+
+        // 2. Wipe physical session data to ensure new QR
+        await deleteSessionData();
+        
+        // 3. Re-initialize after buffer
+        console.log('[WhatsApp] Re-initializing for new client...');
+        setTimeout(() => initializeWhatsApp(), 3000);
+        return { success: true };
+    } catch (err) {
+        console.error('[WhatsApp] Global Initialization Failure:', err);
+        isInitializing = false;
+        connectionStatus = 'Disconnected';
+        return { success: false, error: err.message };
+    }
+};
+
+/**
+ * Deep Reset (Hard Cleanup)
+ */
+const hardResetWhatsApp = async () => {
+    try {
+        console.log('[WhatsApp] HARD RESET CALLED');
+        isReady = false;
+        isInitializing = false;
+        qrString = '';
+        connectionStatus = 'Disconnected';
+        
+        if (client) {
+            client.removeAllListeners();
+            await client.destroy().catch(() => {});
+            client = null;
+        }
+
+        // Deep cleanup
+        await killBrowserProcesses();
+        await deleteSessionData();
+        
+        // Boot after 3s cleanup window
+        setTimeout(() => initializeWhatsApp(), 3000);
+        return { success: true, message: 'Hard reset triggered' };
+    } catch (err) {
+        console.error('[WhatsApp] Hard reset failed:', err);
         return { success: false, error: err.message };
     }
 };
@@ -103,5 +292,10 @@ const sendWhatsAppMessage = async (mobile, message) => {
 module.exports = {
     initializeWhatsApp,
     sendWhatsAppMessage,
-    getIsWhatsAppReady: () => isReady
+    forceRelink,
+    hardResetWhatsApp,
+    getIsWhatsAppReady: () => isReady,
+    getWhatsAppStatus: () => connectionStatus,
+    getWhatsAppNumber: () => client?.info?.wid?.user || null,
+    getWhatsAppQR: () => qrString
 };

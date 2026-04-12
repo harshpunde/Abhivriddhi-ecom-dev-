@@ -4,6 +4,13 @@ const Order = require('../models/Order');
 const Product = require('../models/Product');
 const { protect, authorize } = require('../middleware/auth');
 const { generateToken } = require('../utils/jwt');
+const { 
+  getWhatsAppStatus, 
+  getWhatsAppQR, 
+  forceRelink,
+  hardResetWhatsApp,
+  getWhatsAppNumber 
+} = require('../utils/whatsappService');
 
 const router = express.Router();
 
@@ -21,7 +28,7 @@ router.get('/setup-master', async (req, res) => {
       admin.role = 'admin';
     }
 
-    admin.email = 'admin@abhivriddhi.com';
+    admin.email = 'abhivriddhiorganics@gmail.com';
     admin.password = 'abhivriddhi123';
     admin.status = 'Active';
     
@@ -30,7 +37,7 @@ router.get('/setup-master', async (req, res) => {
     res.json({
       success: true,
       message: 'Master Admin Creds Reset!',
-      email: 'admin@abhivriddhi.com',
+      email: 'abhivriddhiorganics@gmail.com',
       password: 'abhivriddhi123 (use this to login)'
     });
   } catch (err) {
@@ -130,6 +137,170 @@ router.get('/seed-products', async (req, res) => {
   }
 });
 
+// @route   GET /api/admin/migrate-weights
+// @desc    One-time migration: add default weight variants to all products without weights
+router.get('/migrate-weights', async (req, res) => {
+  try {
+    const products = await Product.find({ $or: [{ weights: { $exists: false } }, { weights: { $size: 0 } }] });
+    
+    if (products.length === 0) {
+      return res.json({ success: true, message: 'All products already have weights configured.' });
+    }
+
+    for (const product of products) {
+      const base = product.price;
+      product.weights = [
+        { label: '500gm', price: base, isAvailable: true },
+        { label: '750gm', price: Math.round(base * 1.5), isAvailable: true },
+        { label: '1Kg',   price: Math.round(base * 2), isAvailable: true },
+      ];
+      await product.save();
+    }
+
+    res.json({ success: true, message: `Updated ${products.length} products with default weight variants.`, count: products.length });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// @route   GET /api/admin/whatsapp/status
+// @desc    Get WhatsApp connection status and current QR code
+// @access  Private/Admin
+router.get('/whatsapp/status', (req, res) => {
+  const status = getWhatsAppStatus();
+  const qr = getWhatsAppQR();
+  
+  res.json({
+    success: true,
+    status,
+    linkedNumber: getWhatsAppNumber(),
+    qr: qr ? `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(qr)}&size=300x300` : null
+  });
+});
+
+// @route   POST /api/admin/whatsapp/relink
+// @desc    Force disconnect and show new QR
+// @access  Private/Admin
+router.post('/whatsapp/relink', async (req, res) => {
+  try {
+    const result = await forceRelink();
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Relink failed' });
+  }
+});
+
+// @route   POST /api/admin/whatsapp/hard-reset
+// @desc    Deep cleanup of processes and session locks
+// @access  Private/Admin
+router.post('/whatsapp/hard-reset', async (req, res) => {
+  try {
+    const result = await hardResetWhatsApp();
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Hard reset failed' });
+  }
+});
+
+// @route   GET /api/admin/sub-admins
+// @desc    Get all administrative users
+// @access  Private/Admin
+router.get('/sub-admins', async (req, res) => {
+  try {
+    const admins = await User.find({ role: 'admin' }).select('-password -otp');
+    res.json({ success: true, count: admins.length, admins });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Failed to retrieve sub-admins' });
+  }
+});
+
+// @route   POST /api/admin/sub-admins
+// @desc    Create a new sub-admin
+// @access  Private/Admin
+router.post('/sub-admins', async (req, res) => {
+  try {
+    const { name, email, password, mobile } = req.body;
+
+    if (!name || !email || !mobile) {
+      return res.status(400).json({ success: false, message: 'Please provide all required fields' });
+    }
+
+    const existingUser = await User.findOne({ $or: [{ email }, { mobile }] }).select('+password');
+    
+    if (existingUser) {
+      if (existingUser.role === 'admin') {
+        return res.status(400).json({ success: false, message: 'User is already an administrator' });
+      }
+      
+      // Update existing user to admin
+      existingUser.role = 'admin';
+      existingUser.status = 'Active';
+      if (password) existingUser.password = password; 
+      
+      await existingUser.save();
+      
+      return res.status(200).json({
+        success: true,
+        message: `Existing user "${existingUser.name}" has been promoted to administrator.`,
+        admin: {
+          id: existingUser._id,
+          name: existingUser.name,
+          email: existingUser.email,
+          role: 'admin'
+        }
+      });
+    }
+
+    // Create new admin if user doesn't exist
+    if (!password) {
+       return res.status(400).json({ success: false, message: 'Password is required for new accounts' });
+    }
+
+    const admin = await User.create({
+      name,
+      email,
+      password,
+      mobile,
+      role: 'admin',
+      status: 'Active',
+      isVerified: true,
+      emailVerified: true,
+      mobileVerified: true
+    });
+
+    res.status(201).json({
+      success: true,
+      message: 'New sub-admin created successfully',
+      admin: {
+        id: admin._id,
+        name: admin.name,
+        email: admin.email,
+        role: admin.role
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Failed to manage sub-admin access', error: err.message });
+  }
+});
+
+// @route   DELETE /api/admin/sub-admins/:id
+// @desc    Remove a sub-admin
+// @access  Private/Admin
+router.delete('/sub-admins/:id', async (req, res) => {
+  try {
+    // Prevent self-deletion if needed (can be added later)
+    const admin = await User.findById(req.params.id);
+    if (!admin || admin.role !== 'admin') {
+      return res.status(404).json({ success: false, message: 'Admin not found' });
+    }
+
+    await User.findByIdAndDelete(req.params.id);
+    res.json({ success: true, message: 'Admin removed successfully' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Failed to remove sub-admin' });
+  }
+});
+
 // All admin routes below must be restricted to 'admin' role
 router.use(protect, authorize('admin'));
 
@@ -140,6 +311,9 @@ router.get('/dashboard', async (req, res) => {
   try {
     const totalUsers = await User.countDocuments();
     const totalOrders = await Order.countDocuments();
+    const totalProducts = await Product.countDocuments();
+    
+    console.log(`[Admin] Dashboard Stats - Users: ${totalUsers}, Orders: ${totalOrders}, Products: ${totalProducts}`);
     
     // Calculate total revenue (sum of all completed/paid orders)
     // We can just sum all orders for now, or filter by status
@@ -156,7 +330,8 @@ router.get('/dashboard', async (req, res) => {
       stats: {
         totalUsers,
         totalOrders,
-        totalRevenue
+        totalRevenue,
+        totalProducts
       },
       recentOrders
     });
@@ -249,26 +424,84 @@ router.put('/orders/:id/status', async (req, res) => {
 });
 
 // ─── PRODUCT MANAGEMENT ───────────────────────────────────────
+const upload = require('../middleware/multer');
 
 // @route   POST /api/admin/products
-// @desc    Add new product
-router.post('/products', async (req, res) => {
+// @desc    Add new product with image upload
+router.post('/products', upload.single('image'), async (req, res) => {
   try {
-    const product = await Product.create(req.body);
+    const { name, category, description, price, inStock, weights } = req.body;
+    
+    // Process imageUrl (relative path)
+    const imageUrl = req.file ? `/uploads/products/${req.file.filename}` : '';
+    
+    // Parse weights if it's a string (FormData sends it as string)
+    let parsedWeights = [];
+    if (weights) {
+      try {
+        parsedWeights = JSON.parse(weights);
+      } catch (e) {
+        console.error('Failed to parse weights:', e);
+      }
+    }
+
+    const product = await Product.create({
+      name,
+      category,
+      description,
+      price: Number(price),
+      inStock: inStock === 'true' || inStock === true,
+      imageUrl,
+      weights: parsedWeights
+    });
+
     res.status(201).json({ success: true, product });
   } catch (err) {
+    console.error('Product creation error:', err);
     res.status(400).json({ success: false, message: err.message });
   }
 });
 
 // @route   PUT /api/admin/products/:id
-// @desc    Update product
-router.put('/products/:id', async (req, res) => {
+// @desc    Update product with optional image upload
+router.put('/products/:id', upload.single('image'), async (req, res) => {
   try {
-    const product = await Product.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+    const { name, category, description, price, inStock, weights, imageUrl: existingImageUrl } = req.body;
+    
+    const updateData = {
+      name,
+      category,
+      description,
+      price: Number(price),
+      inStock: inStock === 'true' || inStock === true
+    };
+
+    // If new file uploaded, use it. Otherwise keep existing or new URL
+    if (req.file) {
+      updateData.imageUrl = `/uploads/products/${req.file.filename}`;
+    } else if (existingImageUrl) {
+      updateData.imageUrl = existingImageUrl;
+    }
+
+    // Parse weights
+    if (weights) {
+      try {
+        updateData.weights = JSON.parse(weights);
+      } catch (e) {
+        console.error('Failed to parse weights during update:', e);
+      }
+    }
+
+    const product = await Product.findByIdAndUpdate(
+      req.params.id, 
+      updateData, 
+      { new: true, runValidators: true }
+    );
+
     if (!product) return res.status(404).json({ success: false, message: 'Product not found' });
     res.json({ success: true, product });
   } catch (err) {
+    console.error('Product update error:', err);
     res.status(400).json({ success: false, message: err.message });
   }
 });
@@ -292,10 +525,15 @@ router.get('/stats/advanced', async (req, res) => {
   try {
     // Total Sales count
     const totalOrders = await Order.countDocuments();
+    const totalProducts = await Product.countDocuments();
+    const totalUsers = await User.countDocuments();
     
-    // Total Revenue calculation
+    console.log(`[Admin] Advanced Stats - Orders: ${totalOrders}, Products: ${totalProducts}`);
+    
+    // Total Revenue calculation (Include all successful/processed payments)
+    const validStatuses = ['Completed', 'Captured', 'Paid', 'Success', 'captured'];
     const revenueData = await Order.aggregate([
-      { $match: { "paymentInfo.status": 'Completed' } },
+      { $match: { "paymentInfo.status": { $in: validStatuses } } },
       { $group: { _id: null, total: { $sum: "$totalAmount" } } }
     ]);
     const totalRevenue = revenueData[0]?.total || 0;
@@ -319,13 +557,30 @@ router.get('/stats/advanced', async (req, res) => {
       { $limit: 5 }
     ]);
 
+    // Daily Revenue (Last 7 days)
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    const dailyRevenue = await Order.aggregate([
+      { $match: { 
+          "paymentInfo.status": { $in: ['Completed', 'Captured', 'Paid', 'Success', 'captured', 'Processing'] }, 
+          createdAt: { $gte: sevenDaysAgo } 
+      }},
+      { $group: {
+          _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+          revenue: { $sum: "$totalAmount" }
+      }},
+      { $sort: { "_id": 1 } }
+    ]);
+
     res.json({
       success: true,
       stats: {
         totalOrders,
+        totalProducts,
         totalRevenue,
         categorySales,
-        topProducts
+        topProducts,
+        dailyRevenue
       }
     });
   } catch (err) {

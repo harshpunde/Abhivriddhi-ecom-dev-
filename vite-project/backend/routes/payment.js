@@ -164,7 +164,7 @@ router.post('/verify', async (req, res) => {
 });
 
 // @route   GET /api/payment/invoice/:orderId
-// @desc    Download invoice PDF for an order
+// @desc    Download invoice (PDF by default, HTML fallback if PDF fails)
 router.get('/invoice/:orderId', async (req, res) => {
   try {
     const order = await Order.findById(req.params.orderId);
@@ -172,16 +172,39 @@ router.get('/invoice/:orderId', async (req, res) => {
       return res.status(404).json({ success: false, message: 'Order not found' });
     }
 
-    const pdfBuffer = await generateInvoicePDF(order);
-    const orderId = String(order._id).slice(-8).toUpperCase();
+    const type = req.query.type; // 'html' or 'pdf'
+    const orderIdSuffix = String(order._id).slice(-8).toUpperCase();
 
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="Invoice-INV-${orderId}.pdf"`);
-    res.send(pdfBuffer);
+    // 1. Forced HTML view
+    if (type === 'html') {
+      const html = generateInvoiceHTML(order);
+      return res.send(html);
+    }
+
+    // 2. Normal PDF view with HTML fallback
+    const pdfBuffer = await generateInvoicePDF(order);
+    
+    if (pdfBuffer && pdfBuffer.length > 0) {
+      console.log(`[Invoice] Preparing PDF response for Order: ${order._id}`);
+      
+      // Strict PDF Headers
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Length', pdfBuffer.length);
+      res.setHeader('Content-Disposition', `attachment; filename="Abhivriddhi-INV-${orderIdSuffix}.pdf"`);
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      
+      return res.end(pdfBuffer, 'binary');
+    } else {
+      // Fallback: Serve HTML if PDF generation failed
+      console.warn(`[Invoice] PDF generation failed/empty for ${order._id}, serving HTML fallback.`);
+      const html = generateInvoiceHTML(order);
+      res.setHeader('Content-Type', 'text/html');
+      return res.send(html);
+    }
 
   } catch (error) {
-    console.error('Invoice download error:', error);
-    res.status(500).json({ success: false, message: 'Failed to generate invoice' });
+    console.error('Invoice system error:', error);
+    res.status(500).send('<h1>Error during invoice generation</h1><p>Please try again later or contact support.</p>');
   }
 });
 
