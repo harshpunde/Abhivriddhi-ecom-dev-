@@ -47,6 +47,9 @@ console.log('  - routes loaded: admin');
 
 const app = express();
 
+// Trust Render's proxy for accurate rate limiting
+app.set('trust proxy', 1);
+
 // Use GZIP compression for faster data transfer
 app.use(compression());
 
