@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: abhivriddhi-backend
+    env: node
+    region: singapore
+    plan: free
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 2000
+      - fromGroup: abhivriddhi-secrets
