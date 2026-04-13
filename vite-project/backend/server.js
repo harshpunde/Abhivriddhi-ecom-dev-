@@ -1,5 +1,8 @@
-// Server last updated: 2026-04-09T03:30 — Twilio SMS active
+// Server last updated: 2026-04-12T05:25 — Env Priority
+require('dotenv').config();
 console.log('🚀 [System] Backend boot sequence initiated...');
+console.log('  - config loaded: dotenv (Primary)');
+
 const express = require('express');
 console.log('  - modules loaded: express');
 const compression = require('compression');
@@ -12,20 +15,20 @@ const helmet = require('helmet');
 console.log('  - modules loaded: helmet');
 const rateLimit = require('express-rate-limit');
 console.log('  - modules loaded: rate-limit');
-require('dotenv').config();
-console.log('  - config loaded: dotenv');
 
-// --- CRASH PROTECTION ---
+// --- SYSTEM STABILITY ---
 process.on('unhandledRejection', (reason, promise) => {
   console.error('\n⚠️ [SYSTEM] UNHANDLED REJECTION:', reason);
-  // Keep server running - don't let isolated library failures crash the app
+  // Log and monitor, but consider exiting if state is corrupted
 });
 
 process.on('uncaughtException', (err) => {
-  console.error('\n⚠️ [SYSTEM] UNCAUGHT EXCEPTION:', err.message);
-  // Log and monitor, but keep process alive if safe
+  console.error('\n❌ [SYSTEM] UNCAUGHT EXCEPTION:', err.stack || err.message);
+  // EXIT logic: It is safer to let the process crash and restart than to run in a broken state
+  process.exit(1);
 });
 // ------------------------
+
 
 const authRoutes = require('./routes/auth');
 console.log('  - routes loaded: auth');
@@ -137,14 +140,54 @@ app.use('*', (req, res) => {
 });
 
 const PORT = process.env.PORT || 2000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+const HOST = '0.0.0.0';
+const server = app.listen(PORT, HOST, () => {
+  console.log(`\n🚀 [System] Server running on http://${HOST}:${PORT}`);
+  console.log(`   Environment: ${process.env.NODE_ENV || 'development'}`);
+
   
   // Initialize WhatsApp Bot
   setImmediate(() => {
-    initializeWhatsApp();
+    initializeWhatsApp().catch(err => {
+      console.error('❌ [WhatsApp] Initial boot failure:', err.message);
+    });
   });
 });
+
+// Handle server errors (e.g. Port in use)
+server.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(`\n❌ [System] Port ${PORT} is already in use.`);
+    process.exit(1);
+  } else {
+    console.error('\n❌ [System] Server error:', err);
+  }
+});
+
+// Graceful Shutdown
+const gracefulShutdown = () => {
+    console.log('\n🛑 [System] Shutdown signal received. Closing server...');
+    server.close(async () => {
+        console.log('  - HTTP server closed.');
+        try {
+            await mongoose.connection.close();
+            console.log('  - MongoDB connection closed.');
+            process.exit(0);
+        } catch (err) {
+            console.error('  - Error during shutdown:', err.message);
+            process.exit(1);
+        }
+    });
+    
+    // Safety exit if shutdown hangs
+    setTimeout(() => {
+        console.error('  - Forceful shutdown triggered (timeout)');
+        process.exit(1);
+    }, 5000);
+};
+
+process.on('SIGINT', gracefulShutdown);
+process.on('SIGTERM', gracefulShutdown);
+
 
 module.exports = app;

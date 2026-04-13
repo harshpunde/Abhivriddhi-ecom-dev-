@@ -12,24 +12,28 @@ let qrString = '';
 let connectionStatus = 'Disconnected'; // Disconnected, Initializing, Ready
 
 /**
- * Helper to kill any orphaned chrome/chromium processes on Windows
+ * Helper to cleanup potential locks and zombie processes scoped to this app
  */
-const killBrowserProcesses = () => {
-    return new Promise((resolve) => {
-        if (process.platform !== 'win32') return resolve();
-
-        console.log('[WhatsApp] Attempting to clear zombie browser processes...');
-        // Kill chrome and chromium instances started by node
-        exec('taskkill /F /IM chrome.exe /T', (err) => {
-            if (err) {
-                // Ignore errors if no process found
-            }
-            exec('taskkill /F /IM chromium.exe /T', (err) => {
-                resolve();
+const cleanupService = async () => {
+    try {
+        const sessionPath = path.resolve(__dirname, '../.wwebjs_auth/session');
+        if (fs.existsSync(sessionPath)) {
+            console.log('[WhatsApp] Cleaning up session locks...');
+            const lockFiles = ['SingletonLock', 'lockfile', 'DevToolsActivePort'];
+            lockFiles.forEach(file => {
+                const fullPath = path.join(sessionPath, file);
+                if (fs.existsSync(fullPath)) {
+                    try {
+                        fs.unlinkSync(fullPath);
+                    } catch (e) {}
+                }
             });
-        });
-    });
+        }
+    } catch (err) {
+        console.warn('[WhatsApp] Cleanup warning:', err.message);
+    }
 };
+
 
 /**
  * Helper to remove entire session directory for true logout
@@ -96,25 +100,24 @@ const initializeWhatsApp = async () => {
     
     try {
         // --- STABLE BOOT SEQUENCE ---
-        const sessionPath = path.resolve(__dirname, '../.wwebjs_auth/session');
         
-        // 1. Kill potential zombie processes
-        await killBrowserProcesses();
+        // 1. Cleanup locks before starting
+        await cleanupService();
 
-        // 2. Clear manual file locks if directory exists
-        if (fs.existsSync(sessionPath)) {
-            clearSessionLocks(sessionPath);
-        }
-
-        // 3. Cleanup existing client object
+        // 2. Cleanup existing client object if it exists
         if (client) {
             console.log('[WhatsApp] Cleaning up old client instance...');
             try {
                 client.removeAllListeners();
-                await client.destroy().catch(() => {});
+                // Attempt a quick destroy, but don't hang if it fails
+                await Promise.race([
+                    client.destroy(),
+                    new Promise(resolve => setTimeout(resolve, 2000))
+                ]).catch(() => {});
             } catch (e) {}
             client = null;
         }
+
 
         console.log('[WhatsApp] Loading whatsapp-web.js module...');
         const { Client, LocalAuth } = require('whatsapp-web.js');
@@ -206,7 +209,11 @@ const initializeWhatsApp = async () => {
         });
 
         console.log('[WhatsApp] Attempting client initialization...');
-        await client.initialize();
+        // Set a timeout for initialization to prevent permanent hang
+        await Promise.race([
+            client.initialize(),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Initialization Timeout')), 45000))
+        ]);
         console.log('[WhatsApp] client.initialize() call completed.');
         
         // Note: isInitializing will be set to false in 'ready' or 'qr' events
