@@ -274,7 +274,7 @@ const generateInvoicePDF = async (order) => {
         '--disable-sync',
         ...((process.env.NODE_ENV === 'production' || process.env.RENDER) ? require('@sparticuz/chromium').args : [])
       ],
-      timeout: 60000 
+      timeout: 120000 
     });
     
     const page = await browser.newPage();

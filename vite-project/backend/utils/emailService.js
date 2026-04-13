@@ -27,25 +27,7 @@ const getTransporter = () => {
     }
   });
 
-  // Verify connection with a timeout to prevent hanging the boot sequence
-  console.log(`[EMAIL] Attempting to verify SMTP connection...`);
-  const verifyPromise = new Promise((resolve, reject) => {
-    _transporter.verify((error, success) => {
-      if (error) reject(error);
-      else resolve(success);
-    });
-  });
-
-  Promise.race([
-    verifyPromise,
-    new Promise((_, reject) => setTimeout(() => reject(new Error('SMTP Verification Timeout')), 8000))
-  ]).then(() => {
-    console.log('✅ [EMAIL] SMTP CONNECTION SUCCESSFUL - Transporter is ready.');
-  }).catch((error) => {
-    console.error('\n❌ [EMAIL] SMTP VERIFICATION FAILED or TIMED OUT');
-    console.error(`   - Error: ${error.message}`);
-    console.error('   👉 ACTION: Ensure EMAIL_USER and EMAIL_PASS are correct App Passwords.');
-  });
+  console.log('✅ [EMAIL] Transporter initialized and ready for on-demand requests.');
 
   return _transporter;
 };
