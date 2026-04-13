@@ -1,12 +1,14 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, NavLink } from 'react-router-dom';
-import { User, Package, Ticket, Zap, Wallet, MapPin, Heart, Gift, Bell, LogOut, ChevronDown, ChevronUp } from 'lucide-react';
+import { User, Package, Ticket, Zap, Wallet, MapPin, Heart, Gift, Bell, LogOut, ChevronDown, ChevronUp, ShieldAlert } from 'lucide-react';
 import { fetchProducts, getCurrentUser } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import './Navbar.css';
 
 // ─── User Dropdown Component ──────────────────────────────────
-function UserDropdown({ userName, onLogout }) {
+function UserDropdown({ user, onLogout }) {
+  const userName = user?.name ? user.name.split(' ')[0] : 'Account';
+  const isAdmin = user?.role === 'admin';
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
 
@@ -21,14 +23,9 @@ function UserDropdown({ userName, onLogout }) {
   }, []);
 
   const menuItems = [
+    ...(isAdmin ? [{ icon: <ShieldAlert size={16} className="text-[#4a7c23]" />, label: 'Admin Panel', link: '/admin' }] : []),
     { icon: <User size={16} />, label: 'My Profile', link: '/profile' },
     { icon: <Package size={16} />, label: 'Orders', link: '/orders' },
-    // { icon: <Ticket size={16} />, label: 'Coupons', link: '#' },
-    // { icon: <Zap size={16} />, label: 'Supercoin', link: '#' },
-    // { icon: <Wallet size={16} />, label: 'Saved Cards & Wallet', link: '#' },
-    // { icon: <MapPin size={16} />, label: 'Saved Addresses', link: '#' },
-    // { icon: <Heart size={16} />, label: 'Wishlist', link: '#' },
-    // { icon: <Gift size={16} />, label: 'Gift Cards', link: '#' },
     { icon: <Bell size={16} />, label: 'Notifications', link: '#' },
   ];
 
@@ -333,7 +330,7 @@ export default function Navbar({ cartCount = 0, onCartClick, cartItems = [], onC
             {/* <NavLink to="/contact" className={({ isActive }) => `nav-link ${isActive ? 'nav-link-active' : ''}`}>Contact</NavLink> */}
 
             {isAuthenticated ? (
-              <UserDropdown userName={userName || 'Account'} onLogout={handleLogout} />
+              <UserDropdown user={user} onLogout={handleLogout} />
             ) : (
               <>
                 <NavLink to="/login" className={({ isActive }) => `nav-link ${isActive ? 'nav-link-active' : ''}`}>Login</NavLink>
