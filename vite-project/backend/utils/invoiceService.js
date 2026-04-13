@@ -239,13 +239,24 @@ const generateInvoicePDF = async (order) => {
   const html = generateInvoiceHTML(order);
   let browser = null;
 
-  try {
-    console.log(`[Invoice] Starting PDF generation for Order: ${order._id}`);
-    
-    const executablePath = process.env.PUPPETEER_EXECUTABLE_PATH || undefined;
+    /* --- BROWSER OPTIMIZATION FOR CLOUD --- */
+    let puppeteerLib = require('puppeteer');
+    let executablePath = process.env.PUPPETEER_EXECUTABLE_PATH || undefined;
 
-    browser = await puppeteer.launch({
-      headless: 'new',
+    if (process.env.NODE_ENV === 'production' || process.env.RENDER) {
+        console.log('[Invoice] Cloud environment detected. Using @sparticuz/chromium...');
+        try {
+            const chromium = require('@sparticuz/chromium');
+            puppeteerLib = require('puppeteer-core');
+            executablePath = await chromium.executablePath();
+        } catch (err) {
+            console.warn('[Invoice] Failed to load @sparticuz/chromium, falling back to default puppeteer.');
+        }
+    }
+    /* -------------------------------------- */
+
+    browser = await puppeteerLib.launch({
+      headless: true, // @sparticuz/chromium works best with true
       executablePath: executablePath,
       args: [
         '--no-sandbox', 
@@ -254,9 +265,10 @@ const generateInvoicePDF = async (order) => {
         '--disable-extensions',
         '--no-zygote',
         '--disable-gpu',
-        '--single-process'
+        '--single-process',
+        ...((process.env.NODE_ENV === 'production' || process.env.RENDER) ? require('@sparticuz/chromium').args : [])
       ],
-      timeout: 30000 // Increased timeout for slower cloud boots
+      timeout: 30000 
     });
     
     const page = await browser.newPage();

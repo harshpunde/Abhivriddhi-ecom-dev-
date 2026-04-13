@@ -132,13 +132,23 @@ const initializeWhatsApp = async () => {
         }
 
 
-        console.log('[WhatsApp] Loading whatsapp-web.js module...');
-        const { Client, LocalAuth } = require('whatsapp-web.js');
+        /* --- BROWSER OPTIMIZATION FOR CLOUD --- */
+        let puppeteerLib = require('puppeteer');
+        let executablePath = process.env.PUPPETEER_EXECUTABLE_PATH || undefined;
 
-        console.log('[WhatsApp] Creating client instance...');
-
-        // Find browser installed via build.sh or fall back to default
-        const executablePath = process.env.PUPPETEER_EXECUTABLE_PATH || undefined;
+        // Use @sparticuz/chromium in production (Render)
+        if (process.env.NODE_ENV === 'production' || process.env.RENDER) {
+            console.log('[WhatsApp] Cloud environment detected. Using @sparticuz/chromium...');
+            try {
+                const chromium = require('@sparticuz/chromium');
+                puppeteerLib = require('puppeteer-core');
+                executablePath = await chromium.executablePath();
+                console.log('[WhatsApp] Chromium path resolved.');
+            } catch (err) {
+                console.warn('[WhatsApp] Failed to load @sparticuz/chromium, falling back to default puppeteer.');
+            }
+        }
+        /* -------------------------------------- */
 
         client = new Client({
             authStrategy: new LocalAuth({
@@ -159,9 +169,9 @@ const initializeWhatsApp = async () => {
                     '--disable-extensions',
                     '--no-zygote',
                     '--disable-gpu',
-                    '--single-process', // Helps with memory on low-RAM servers
+                    '--single-process',
                     '--disable-software-rasterizer',
-                    '--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                    ...((process.env.NODE_ENV === 'production' || process.env.RENDER) ? require('@sparticuz/chromium').args : [])
                 ],
             }
         });

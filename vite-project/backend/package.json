@@ -11,6 +11,7 @@
     "postinstall": "npx puppeteer browsers install chrome"
   },
   "dependencies": {
+    "@sparticuz/chromium": "^147.0.0",
     "bcryptjs": "^2.4.3",
     "cloudinary": "^1.41.3",
     "compression": "^1.8.1",
@@ -27,6 +28,7 @@
     "multer-storage-cloudinary": "^4.0.0",
     "nodemailer": "^6.9.7",
     "puppeteer": "^24.40.0",
+    "puppeteer-core": "^24.40.0",
     "qrcode-terminal": "^0.12.0",
     "razorpay": "^2.9.6",
     "twilio": "^4.19.0",
