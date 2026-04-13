@@ -63,15 +63,16 @@ app.use(cors({
 // Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100 // limit each IP to 100 requests per windowMs
+  max: 100,
+  message: { success: false, message: 'Too many requests from this IP, please try again in 15 minutes.' }
 });
 app.use('/api/', limiter);
 
 // OTP rate limiting (stricter)
 const otpLimiter = rateLimit({
   windowMs: 5 * 60 * 1000, // 5 minutes
-  max: 5, // limit each IP to 5 OTP requests per windowMs
-  message: 'Too many OTP requests, please try again later.'
+  max: 15, // increased from 5 to 15 for better testing headroom
+  message: { success: false, message: 'Too many OTP requests, please try again later.' }
 });
 app.use('/api/auth/send-otp', otpLimiter);
 

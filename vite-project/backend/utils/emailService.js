@@ -27,19 +27,24 @@ const getTransporter = () => {
     }
   });
 
-  // Verify connection with detailed logging for prod debugging
+  // Verify connection with a timeout to prevent hanging the boot sequence
   console.log(`[EMAIL] Attempting to verify SMTP connection...`);
-  _transporter.verify((error, success) => {
-    if (error) {
-      console.error('\n❌ [EMAIL] SMTP VERIFICATION FAILED');
-      console.error(`   - Error: ${error.message}`);
-      console.error(`   - Code: ${error.code}`);
-      console.error(`   - Host: ${process.env.EMAIL_HOST || 'smtp.gmail.com'}`);
-      console.error('   👉 FIX: Use Gmail "App Password" (16 chars), not your main password.');
-      console.error('   👉 FIX: Ensure port 587/465 is not blocked by your provider.');
-    } else {
-      console.log('✅ [EMAIL] SMTP CONNECTION SUCCESSFUL - Transporter is ready.');
-    }
+  const verifyPromise = new Promise((resolve, reject) => {
+    _transporter.verify((error, success) => {
+      if (error) reject(error);
+      else resolve(success);
+    });
+  });
+
+  Promise.race([
+    verifyPromise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error('SMTP Verification Timeout')), 8000))
+  ]).then(() => {
+    console.log('✅ [EMAIL] SMTP CONNECTION SUCCESSFUL - Transporter is ready.');
+  }).catch((error) => {
+    console.error('\n❌ [EMAIL] SMTP VERIFICATION FAILED or TIMED OUT');
+    console.error(`   - Error: ${error.message}`);
+    console.error('   👉 ACTION: Ensure EMAIL_USER and EMAIL_PASS are correct App Passwords.');
   });
 
   return _transporter;
