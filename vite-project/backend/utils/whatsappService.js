@@ -132,7 +132,7 @@ const initializeWhatsApp = async () => {
         }
 
 
-        /* --- BROWSER OPTIMIZATION FOR CLOUD --- */
+        const { Client, LocalAuth } = require('whatsapp-web.js');
         let puppeteerLib = require('puppeteer');
         let executablePath = process.env.PUPPETEER_EXECUTABLE_PATH || undefined;
 
