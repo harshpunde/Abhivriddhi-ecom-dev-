@@ -242,8 +242,11 @@ const generateInvoicePDF = async (order) => {
   try {
     console.log(`[Invoice] Starting PDF generation for Order: ${order._id}`);
     
+    const executablePath = process.env.PUPPETEER_EXECUTABLE_PATH || undefined;
+
     browser = await puppeteer.launch({
       headless: 'new',
+      executablePath: executablePath,
       args: [
         '--no-sandbox', 
         '--disable-setuid-sandbox',

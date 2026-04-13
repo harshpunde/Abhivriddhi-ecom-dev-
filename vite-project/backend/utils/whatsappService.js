@@ -137,8 +137,8 @@ const initializeWhatsApp = async () => {
 
         console.log('[WhatsApp] Creating client instance...');
 
-        // Production/Linux optimizations (Removes Windows specific paths)
-        let executablePath = process.env.PUPPETEER_EXECUTABLE_PATH || undefined;
+        // Find browser installed via build.sh or fall back to default
+        const executablePath = process.env.PUPPETEER_EXECUTABLE_PATH || undefined;
 
         client = new Client({
             authStrategy: new LocalAuth({
