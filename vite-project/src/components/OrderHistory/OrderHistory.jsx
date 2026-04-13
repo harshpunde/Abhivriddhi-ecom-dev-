@@ -25,12 +25,7 @@ const OrderHistory = () => {
             }
         };
 
-        const token = localStorage.getItem('token');
-        if (!token) {
-            navigate('/login?redirect=/orders');
-        } else {
-            getOrders();
-        }
+        getOrders();
     }, [navigate]);
 
     const getStatusColor = (status) => {

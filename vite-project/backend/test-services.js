@@ -6,9 +6,8 @@ const { initializeWhatsApp, getIsWhatsAppReady } = require('./utils/whatsappServ
 async function testServices() {
     console.log('--- Testing Services ---');
     
-    const testEmail = 'priyanshulokhande72@gmail.com'; // Testing to themselves
-    const testMobile = '919503450379'; // Assuming a test number, or USER's number if I knew it. 
-    // Wait, I see 'priyanshulokhande72' in the email, maybe that's the user.
+    const testEmail = 'test@example.com'; 
+    const testMobile = '+919876543210'; 
     
     console.log('\n1. Testing Email...');
     try {

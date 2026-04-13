@@ -75,13 +75,8 @@ export default function Profile() {
   };
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      navigate('/login');
-      return;
-    }
     loadData();
-  }, [navigate]);
+  }, []);
 
   const handleUpdate = async (fieldGroup) => {
     try {

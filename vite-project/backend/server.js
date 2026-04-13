@@ -148,10 +148,12 @@ const server = app.listen(PORT, HOST, () => {
   console.log(`   Environment: ${process.env.NODE_ENV || 'development'}`);
 
   
-  // Initialize WhatsApp Bot
+  // Initialize WhatsApp Bot - Isolated from main API boot
   setImmediate(() => {
+    console.log('   Starting background services: [WhatsApp]');
     initializeWhatsApp().catch(err => {
       console.error('❌ [WhatsApp] Initial boot failure:', err.message);
+      // We do NOT crash the server here, just log it.
     });
   });
 });

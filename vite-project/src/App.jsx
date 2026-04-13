@@ -117,7 +117,11 @@ function App() {
                 <Route path="/cart" element={<CartPage />} />
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/signup" element={<SignupPage />} />
-                <Route path="/profile" element={<Profile />} />
+                <Route path="/profile" element={
+                  <ProtectedRoute>
+                    <Profile />
+                  </ProtectedRoute>
+                } />
                 <Route path="/checkout" element={
                   <ProtectedRoute>
                     <CheckoutPage />
@@ -128,7 +132,11 @@ function App() {
                 <Route path="/shipping-policy" element={<ShippingPolicy />} />
                 <Route path="/cancellation-policy" element={<CancellationPolicy />} />
                 <Route path="/makings" element={<Makings />} />
-                <Route path="/orders" element={<OrderHistory />} />
+                <Route path="/orders" element={
+                  <ProtectedRoute>
+                    <OrderHistory />
+                  </ProtectedRoute>
+                } />
                 <Route path="/contact" element={<ContactUs />} />
 
                 {/* Admin Routes */}

@@ -16,18 +16,9 @@ let connectionStatus = 'Disconnected'; // Disconnected, Initializing, Ready
  */
 const killBrowserProcesses = () => {
     return new Promise((resolve) => {
-        const platform = process.platform;
-        console.log(`[WhatsApp] Clearing zombie browser processes on ${platform}...`);
-        
-        if (platform === 'win32') {
-            exec('taskkill /F /IM chrome.exe /T', () => {
-                exec('taskkill /F /IM chromium.exe /T', () => resolve());
-            });
-        } else if (platform === 'darwin' || platform === 'linux') {
-            exec('pkill -i -f "Chromium" || pkill -i -f "Google Chrome"', () => resolve());
-        } else {
-            resolve();
-        }
+        // We only want to cleanup locks, not kill the user's actual browser
+        console.log('[WhatsApp] Skipping system-wide browser kill for stability...');
+        resolve();
     });
 };
 
@@ -245,14 +236,11 @@ const initializeWhatsApp = async () => {
         isInitializing = false;
         connectionStatus = 'Disconnected';
 
-        // Log stack trace for deeper debugging
-        console.error(err.stack);
-
         // Check if it's a lock error and maybe wait longer
         const isLockError = err.message.includes('already running');
-        const retryDelay = isLockError ? 30000 : 10000;
+        const retryDelay = isLockError ? 60000 : 30000; // Slower retries to prevent crash loops
 
-        console.log(`[WhatsApp] Retrying in ${retryDelay / 1000}s...`);
+        console.log(`[WhatsApp] Failure detected. Next retry in ${retryDelay / 1000}s. API remains operational.`);
         setTimeout(() => initializeWhatsApp(), retryDelay);
     }
 };
