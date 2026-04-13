@@ -111,7 +111,10 @@ export default function Footer() {
           <Link to="/terms">Terms & Conditions</Link>
           <Link to="/cancellation-policy">Cancellation & Return Policy</Link>
         </div>
-        <span className="footer-copy">Team Abhivriddhi Organics</span>
+        <div className="footer-meta">
+          <span className="footer-copy">Team Abhivriddhi Organics</span>
+          <Link to="/admin/login" className="admin-access-link">Admin Access</Link>
+        </div>
       </div>
     </footer>
   );
