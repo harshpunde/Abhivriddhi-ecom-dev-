@@ -243,14 +243,17 @@ const generateInvoicePDF = async (order) => {
     console.log(`[Invoice] Starting PDF generation for Order: ${order._id}`);
     
     browser = await puppeteer.launch({
-      headless: 'new', // Use stable 'new' headless mode
+      headless: 'new',
       args: [
         '--no-sandbox', 
         '--disable-setuid-sandbox',
         '--disable-dev-shm-usage',
-        '--disable-extensions'
+        '--disable-extensions',
+        '--no-zygote',
+        '--disable-gpu',
+        '--single-process'
       ],
-      timeout: 15000 // 15s timeout
+      timeout: 30000 // Increased timeout for slower cloud boots
     });
     
     const page = await browser.newPage();

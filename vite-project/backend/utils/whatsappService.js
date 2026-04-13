@@ -137,20 +137,8 @@ const initializeWhatsApp = async () => {
 
         console.log('[WhatsApp] Creating client instance...');
 
-        // Find system chrome if possible (Windows common paths)
-        const chromePaths = [
-            'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
-            'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
-            'C:\\LocalAppDirectory\\Google\\Chrome\\Application\\chrome.exe'
-        ];
-        let executablePath = '';
-        for (const p of chromePaths) {
-            if (fs.existsSync(p)) {
-                executablePath = p;
-                console.log(`[WhatsApp] Found system Chrome at: ${p}`);
-                break;
-            }
-        }
+        // Production/Linux optimizations (Removes Windows specific paths)
+        let executablePath = process.env.PUPPETEER_EXECUTABLE_PATH || undefined;
 
         client = new Client({
             authStrategy: new LocalAuth({
@@ -163,7 +151,7 @@ const initializeWhatsApp = async () => {
             puppeteer: {
                 headless: 'new',
                 handleSIGINT: false,
-                executablePath: executablePath || undefined,
+                executablePath: executablePath,
                 args: [
                     '--no-sandbox',
                     '--disable-setuid-sandbox',
@@ -171,6 +159,7 @@ const initializeWhatsApp = async () => {
                     '--disable-extensions',
                     '--no-zygote',
                     '--disable-gpu',
+                    '--single-process', // Helps with memory on low-RAM servers
                     '--disable-software-rasterizer',
                     '--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
                 ],
