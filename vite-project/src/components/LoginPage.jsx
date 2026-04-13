@@ -14,11 +14,11 @@ export default function LoginPage() {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [otp, setOtp] = useState('');
-  
+
   // 'login' | 'otp_verify' | 'forgot' | 'reset_otp_verify' | 'new_password'
-  const [step, setStep] = useState('login'); 
+  const [step, setStep] = useState('login');
   const [loginMode, setLoginMode] = useState('password'); // 'password' | 'otp'
-  const [message, setMessage] = useState({ text: '', type: 'info' }); 
+  const [message, setMessage] = useState({ text: '', type: 'info' });
   const [loading, setLoading] = useState(false);
 
   const isEmail = identifier.includes('@');
@@ -150,7 +150,7 @@ export default function LoginPage() {
   return (
     <div className="py-20 px-4 flex items-center justify-center bg-slate-50/50">
       <div className="w-full max-w-md rounded-3xl bg-white p-10 shadow-xl shadow-slate-200 border border-slate-100">
-        
+
         {/* Step Header */}
         <div className="mb-8 text-center sm:text-left transition-all duration-300">
           <div className="w-12 h-12 bg-gradient-to-br from-[#4a7c23] to-[#7dbb46] rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-[#4a7c23]/20 mx-auto sm:mx-0">
@@ -208,7 +208,7 @@ export default function LoginPage() {
             <div className="space-y-2">
               <div className="flex justify-between items-center ml-1">
                 <label className="text-sm font-bold text-slate-700">Password</label>
-                <button 
+                <button
                   type="button"
                   onClick={() => setStep('forgot')}
                   className="text-xs font-bold text-[#4a7c23] hover:text-[#3d6a1c] transition"
@@ -253,7 +253,7 @@ export default function LoginPage() {
           {/* NEW PASSWORD FIELDS */}
           {step === 'new_password' && (
             <div className="space-y-4 animate-in fade-in duration-500">
-               <div className="space-y-2">
+              <div className="space-y-2">
                 <label className="text-sm font-bold text-slate-700 ml-1">New Password</label>
                 <input
                   value={newPassword}
@@ -283,7 +283,7 @@ export default function LoginPage() {
                 {loading ? 'Authenticating...' : 'Sign In Now'}
               </button>
             )}
-            
+
             {step === 'login' && loginMode === 'otp' && (
               <button onClick={(e) => handleSendOTP(e, 'login')} disabled={loading || !identifier} className="btn-auth-primary">
                 {loading ? 'Sending Code...' : 'Get Login OTP'}

@@ -123,16 +123,9 @@ function ProductCard({ product }) {
           <img 
             src={product.img || product.imageUrl} 
             alt={product.name} 
-            className="product-img front" 
+            className="product-img main" 
             loading="lazy" 
           />
-          {(product.backImg || product.backImageUrl) && (
-            <img 
-              src={product.backImg || product.backImageUrl} 
-              alt={`${product.name} back`} 
-              className="product-img back absolute inset-0 opacity-0" 
-            />
-          )}
         </div>
         <div className="product-info px-4 pt-4 pb-2">
           <h3 className="product-name font-bold text-gray-900 border-b-none mb-1">{product.name}</h3>

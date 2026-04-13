@@ -63,7 +63,7 @@ body {
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
-  background-color: #1a1a1a; /* Seamless dark background for header gaps */
+  background-color: #ffffff;
 }
 
 h1,

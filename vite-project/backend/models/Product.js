@@ -85,7 +85,8 @@ productSchema.set('toJSON', {
   virtuals: true,
   versionKey: false,
   transform: (doc, ret) => {
-    delete ret._id; // Frontend will use the virtual 'id'
+    // Keep both _id and the virtual 'id' so all frontend components work
+    ret.id = ret._id?.toString();
     return ret;
   }
 });

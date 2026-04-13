@@ -39,7 +39,7 @@ function RelatedCard({ product }) {
   };
 
   return (
-    <div className="related-card" onClick={() => navigate(`/product/${product._id}`)}>
+    <div className="related-card" onClick={() => navigate(`/product/${product.id || product._id}`)}>
       <div className="related-img-wrap">
         <img src={product.img} alt={product.name} />
       </div>
@@ -97,7 +97,7 @@ export default function ProductDetail() {
           // Fetch related (ensure 4 items)
           const relatedData = await fetchProducts({ limit: 12 });
           if (relatedData.success) {
-            let filtered = relatedData.products?.filter(p => p._id !== id) || [];
+            let filtered = relatedData.products?.filter(p => (p.id || p._id?.toString()) !== id) || [];
             // Prioritize same category
             let sameCategory = filtered.filter(p => p.category === updatedProduct.category);
             let others = filtered.filter(p => p.category !== updatedProduct.category);
