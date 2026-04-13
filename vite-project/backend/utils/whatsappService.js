@@ -171,6 +171,9 @@ const initializeWhatsApp = async () => {
                     '--disable-gpu',
                     '--single-process',
                     '--disable-software-rasterizer',
+                    '--no-first-run',
+                    '--disable-background-networking',
+                    '--disable-default-apps',
                     ...((process.env.NODE_ENV === 'production' || process.env.RENDER) ? require('@sparticuz/chromium').args : [])
                 ],
             }

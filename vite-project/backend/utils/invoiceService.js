@@ -267,9 +267,14 @@ const generateInvoicePDF = async (order) => {
         '--no-zygote',
         '--disable-gpu',
         '--single-process',
+        '--disable-software-rasterizer',
+        '--no-first-run',
+        '--disable-background-networking',
+        '--disable-default-apps',
+        '--disable-sync',
         ...((process.env.NODE_ENV === 'production' || process.env.RENDER) ? require('@sparticuz/chromium').args : [])
       ],
-      timeout: 30000 
+      timeout: 60000 
     });
     
     const page = await browser.newPage();
