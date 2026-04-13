@@ -35,6 +35,22 @@ const AdminUsers = () => {
     }
   };
 
+  const handleDeleteUser = async (user) => {
+    if (!window.confirm(`Are you sure you want to PERMANENTLY delete user "${user.name}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      const data = await api.delete(`/admin/users/${user._id}`);
+      if (data.success) {
+        setUsers(users.filter(u => u._id !== user._id));
+      }
+    } catch (err) {
+      console.error('Failed to delete user', err);
+      alert(err.message || 'Failed to delete user');
+    }
+  };
+
   const filteredUsers = users.filter(u => 
     u.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     u.email?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -108,18 +124,30 @@ const AdminUsers = () => {
                     </div>
                   </td>
                   <td className="px-10 py-7 text-right">
-                    {user.role !== 'admin' && (
-                      <button 
-                        onClick={() => handleStatusToggle(user._id, user.status || 'Active')}
-                        className={`text-xs font-black uppercase tracking-widest px-6 py-3 rounded-xl transition-all shadow-sm border ${
-                          user.status === 'Active' 
-                            ? 'bg-white border-red-100 text-red-600 hover:bg-red-50' 
-                            : 'bg-emerald-600 border-transparent text-white hover:bg-emerald-700 shadow-md'
-                        }`}
-                      >
-                        {user.status === 'Active' ? 'Deactivate' : 'Activate User'}
-                      </button>
-                    )}
+                    <div className="flex items-center justify-end gap-3">
+                      {user.role !== 'admin' && (
+                        <>
+                          <button 
+                             onClick={() => handleStatusToggle(user._id, user.status || 'Active')}
+                             className={`text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-xl transition-all shadow-sm border ${
+                               user.status === 'Active' 
+                                 ? 'bg-white border-yellow-100 text-yellow-600 hover:bg-yellow-50' 
+                                 : 'bg-emerald-600 border-transparent text-white hover:bg-emerald-700 shadow-md'
+                             }`}
+                           >
+                             {user.status === 'Active' ? 'Deactivate' : 'Activate'}
+                           </button>
+                           
+                           <button 
+                             onClick={() => handleDeleteUser(user)}
+                             className="text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-xl bg-white border border-red-100 text-red-600 hover:bg-red-50 transition-all shadow-sm"
+                             title="Delete Permanently"
+                           >
+                             Delete
+                           </button>
+                        </>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}

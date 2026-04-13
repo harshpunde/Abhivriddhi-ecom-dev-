@@ -380,6 +380,33 @@ router.put('/users/:id/status', async (req, res) => {
   }
 });
 
+// @route   DELETE /api/admin/users/:id
+// @desc    Permanently delete a user
+// @access  Private/Admin
+router.delete('/users/:id', async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    // Prevent self-deletion
+    if (user._id.toString() === req.user._id.toString()) {
+      return res.status(400).json({ success: false, message: 'You cannot delete your own admin account' });
+    }
+
+    await User.findByIdAndDelete(req.params.id);
+    
+    console.log(`[Admin] User deleted: ${user.email} (${user._id})`);
+    
+    res.json({ success: true, message: 'User deleted successfully' });
+  } catch (err) {
+    console.error('Delete user error:', err);
+    res.status(500).json({ success: false, message: 'Failed to delete user' });
+  }
+});
+
 // @route   GET /api/admin/orders
 // @desc    Get all orders
 // @access  Private/Admin
