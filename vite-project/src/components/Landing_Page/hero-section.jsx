@@ -3,7 +3,7 @@ import { Button } from "../ui/button.jsx";
 
 export function HeroSection() {
   return (
-    <section className="relative h-[100vh] min-h-[500px] overflow-hidden pt-12">
+    <section className="relative h-[100vh] min-h-[500px] overflow-hidden">
 
       {/* Background Image */}
       <div className="absolute inset-0">

@@ -42,6 +42,8 @@ const User = require('./models/User');
 console.log('  - models loaded: User');
 const { initializeWhatsApp } = require('./utils/whatsappService');
 console.log('  - services loaded: whatsappService');
+const adminRoutes = require('./routes/admin');
+console.log('  - routes loaded: admin');
 
 const app = express();
 

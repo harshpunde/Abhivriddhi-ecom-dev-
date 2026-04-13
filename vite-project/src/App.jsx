@@ -68,7 +68,7 @@ function MainLayout({ children }) {
         />
       )}
 
-      <main className={`flex-grow ${hideHeaders ? '' : 'mt-[40px]'}`}>
+      <main className="flex-grow">
         <Suspense fallback={
           <div className="flex h-screen items-center justify-center">
             <div className="w-10 h-10 border-4 border-[#4a7c23]/20 border-t-[#4a7c23] rounded-full animate-spin"></div>
