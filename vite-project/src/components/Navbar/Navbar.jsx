@@ -325,16 +325,18 @@ export default function Navbar({ cartCount = 0, onCartClick, cartItems = [], onC
           </button>
 
           <div className={`navbar-links ${mobileOpen ? 'open' : ''}`}>
-            <NavLink to="/products" className={({ isActive }) => `nav-link ${isActive ? 'nav-link-active' : ''}`}>Products</NavLink>
-            <NavLink to="/makings" className={({ isActive }) => `nav-link ${isActive ? 'nav-link-active' : ''}`}>Makings</NavLink>
-            {/* <NavLink to="/contact" className={({ isActive }) => `nav-link ${isActive ? 'nav-link-active' : ''}`}>Contact</NavLink> */}
+            <NavLink to="/products" onClick={() => setMobileOpen(false)} className={({ isActive }) => `nav-link ${isActive ? 'nav-link-active' : ''}`}>Products</NavLink>
+            <NavLink to="/makings" onClick={() => setMobileOpen(false)} className={({ isActive }) => `nav-link ${isActive ? 'nav-link-active' : ''}`}>Makings</NavLink>
+            {/* <NavLink to="/contact" onClick={() => setMobileOpen(false)} className={({ isActive }) => `nav-link ${isActive ? 'nav-link-active' : ''}`}>Contact</NavLink> */}
 
             {isAuthenticated ? (
-              <UserDropdown user={user} onLogout={handleLogout} />
+              <div onClick={() => setMobileOpen(false)} style={{ display: 'flex' }}>
+                <UserDropdown user={user} onLogout={handleLogout} />
+              </div>
             ) : (
               <>
-                <NavLink to="/login" className={({ isActive }) => `nav-link ${isActive ? 'nav-link-active' : ''}`}>Login</NavLink>
-                <NavLink to="/signup" className="nav-btn-primary" style={{ padding: '8px 16px', borderRadius: '8px', fontSize: '14px', textDecoration: 'none', marginLeft: '8px' }}>Sign Up</NavLink>
+                <NavLink to="/login" onClick={() => setMobileOpen(false)} className={({ isActive }) => `nav-link ${isActive ? 'nav-link-active' : ''}`}>Login</NavLink>
+                <NavLink to="/signup" onClick={() => setMobileOpen(false)} className="nav-btn-primary" style={{ padding: '8px 16px', borderRadius: '8px', fontSize: '14px', textDecoration: 'none', marginLeft: '8px' }}>Sign Up</NavLink>
               </>
             )}
           </div>

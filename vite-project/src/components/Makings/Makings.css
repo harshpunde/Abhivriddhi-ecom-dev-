@@ -6,7 +6,7 @@
   padding: 60px 0;
   color: #1a1a1a;
   font-family: 'Inter', system-ui, sans-serif;
-  margin-top: 60px;
+  margin-top: 120px;
 }
 
 .makings-content {
@@ -151,6 +151,10 @@
 
 /* ─── Responsive ───────────────────────────────────────────── */
 @media (max-width: 900px) {
+  .makings-container {
+    margin-top: 120px;
+  }
+
 
   .story-section,
   .story-section.reverse {
@@ -168,20 +172,25 @@
   }
 
   .centered-section {
-    margin-bottom: 60px; /* Reduced from 100px */
+    margin-bottom: 60px;
+    /* Reduced from 100px */
   }
 
   .story-section {
-    margin-bottom: 60px; /* Reduced from 100px */
+    margin-bottom: 60px;
+    /* Reduced from 100px */
   }
 
   .decorative-title {
-    margin-bottom: 15px; /* Reduced from 30px for tighter title grouping */
+    margin-bottom: 15px;
+    /* Reduced from 30px for tighter title grouping */
     font-size: 24px;
   }
 
-  .centered-text p, .story-text p {
-    margin-bottom: 16px; /* Standardized small gap between paragraphs */
+  .centered-text p,
+  .story-text p {
+    margin-bottom: 16px;
+    /* Standardized small gap between paragraphs */
   }
 
   .side-title-right::after,

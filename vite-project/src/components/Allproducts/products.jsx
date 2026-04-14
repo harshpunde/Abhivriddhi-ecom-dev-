@@ -5,14 +5,15 @@ import { fetchProducts } from '../../services/api';
 import { useCart } from '../../context/CartContext';
 const CATEGORIES = ['All', 'Atta', 'Millets', 'Rice', 'Honey']; // Local copy for UI filters
 
-// ─── Filter Dropdown (Polished for Figma) ─────────────────────
-function FilterDropdown({ label, value, options, onChange }) {
-  const [open, setOpen] = useState(false);
+// ─── Filter Dropdown ─────────────────────────────────────────
+// Accepts openId + activeFilter so only one can be open at a time
+function FilterDropdown({ id, label, value, options, onChange, activeFilter, setActiveFilter }) {
+  const open = activeFilter === id;
   return (
     <div className="filter-dropdown">
       <button
         className={`filter-dropdown-btn ${open ? 'active' : ''}`}
-        onClick={() => setOpen(!open)}
+        onClick={() => setActiveFilter(open ? null : id)}
       >
         <span>{label}</span>
         <svg
@@ -29,7 +30,7 @@ function FilterDropdown({ label, value, options, onChange }) {
             <li key={opt.value}>
               <button
                 className={`filter-option ${value === opt.value ? 'selected' : ''}`}
-                onClick={() => { onChange(opt.value); setOpen(false); }}
+                onClick={() => { onChange(opt.value); setActiveFilter(null); }}
               >
                 {opt.label}
               </button>
@@ -41,8 +42,9 @@ function FilterDropdown({ label, value, options, onChange }) {
   );
 }
 
-// ─── Filters Sidebar (Desktop) ────────────────────────────────
+// ─── Filters Sidebar (Desktop) ────────────────────────────────────
 function Sidebar({ availability, setAvailability, sortBy, setSortBy, category, setCategory, onClear }) {
+  const [activeFilter, setActiveFilter] = useState(null);
   return (
     <aside className="sidebar desktop-only">
       <div className="sidebar-header">
@@ -50,19 +52,18 @@ function Sidebar({ availability, setAvailability, sortBy, setSortBy, category, s
       </div>
 
       <FilterDropdown
-        label="Availability"
-        value={availability}
+        id="availability" label="Availability" value={availability}
         options={[
           { value: 'all', label: 'All' },
           { value: 'in-stock', label: 'In Stock' },
           { value: 'out-of-stock', label: 'Out of Stock' },
         ]}
         onChange={setAvailability}
+        activeFilter={activeFilter} setActiveFilter={setActiveFilter}
       />
 
       <FilterDropdown
-        label="Sort By"
-        value={sortBy}
+        id="sortby" label="Sort By" value={sortBy}
         options={[
           { value: 'default', label: 'Default' },
           { value: 'price-asc', label: 'Price: Low to High' },
@@ -70,15 +71,50 @@ function Sidebar({ availability, setAvailability, sortBy, setSortBy, category, s
           { value: 'name-asc', label: 'Name: A to Z' },
         ]}
         onChange={setSortBy}
+        activeFilter={activeFilter} setActiveFilter={setActiveFilter}
       />
 
       <FilterDropdown
-        label="Products Category"
-        value={category}
+        id="category" label="Products Category" value={category}
         options={CATEGORIES.map(c => ({ value: c === 'All' ? 'all' : c, label: c }))}
         onChange={setCategory}
+        activeFilter={activeFilter} setActiveFilter={setActiveFilter}
       />
     </aside>
+  );
+}
+
+// ─── Mobile Filters (with accordion) ─────────────────────────
+function MobileFilters({ category, setCategory, sortBy, setSortBy, availability, setAvailability }) {
+  const [activeFilter, setActiveFilter] = useState(null);
+  return (
+    <div className="mobile-filters">
+      <FilterDropdown
+        id="cat" label="Category" value={category}
+        options={CATEGORIES.map(c => ({ value: c === 'All' ? 'all' : c, label: c }))}
+        onChange={setCategory}
+        activeFilter={activeFilter} setActiveFilter={setActiveFilter}
+      />
+      <FilterDropdown
+        id="sort" label="Sort By" value={sortBy}
+        options={[
+          { value: 'default', label: 'Default' },
+          { value: 'price-asc', label: 'Price: Low' },
+          { value: 'price-desc', label: 'Price: High' },
+        ]}
+        onChange={setSortBy}
+        activeFilter={activeFilter} setActiveFilter={setActiveFilter}
+      />
+      <FilterDropdown
+        id="avail" label="Availability" value={availability}
+        options={[
+          { value: 'all', label: 'All' },
+          { value: 'in-stock', label: 'In Stock' },
+        ]}
+        onChange={setAvailability}
+        activeFilter={activeFilter} setActiveFilter={setActiveFilter}
+      />
+    </div>
   );
 }
 
@@ -87,10 +123,10 @@ function ProductCard({ product }) {
   const navigate = useNavigate();
   const { addToCart } = useCart();
   const [adding, setAdding] = useState(false);
-  
+
   let parsedWeights = product.weights;
   if (typeof parsedWeights === 'string') {
-    try { parsedWeights = JSON.parse(parsedWeights); } 
+    try { parsedWeights = JSON.parse(parsedWeights); }
     catch (err) { parsedWeights = []; }
   }
   const hasVariants = parsedWeights && parsedWeights.length > 0;
@@ -98,7 +134,7 @@ function ProductCard({ product }) {
   const handleAdd = (e) => {
     e.stopPropagation();
     setAdding(true);
-    
+
     const defaultVariant = hasVariants ? parsedWeights[0].label : null;
     const defaultPrice = hasVariants ? parsedWeights[0].price : product.price;
 
@@ -108,49 +144,35 @@ function ProductCard({ product }) {
       cartVariant: defaultVariant,
       cartPrice: Number(defaultPrice)
     };
-    
+
     addToCart(productToAdd);
     setTimeout(() => setAdding(false), 800);
   };
 
   return (
     <div
-      className={`product-card ${!product.inStock ? 'out-of-stock' : ''} flex flex-col justify-between cursor-pointer`}
+      className={`product-card ${!product.inStock ? 'out-of-stock' : ''}`}
       onClick={() => navigate(`/product/${product.id || product._id}`)}
     >
-      <div>
-        <div className="product-img-wrap relative overflow-hidden group">
-          <img 
-            src={product.img || product.imageUrl} 
-            alt={product.name} 
-            className="product-img main" 
-            loading="lazy" 
-          />
-        </div>
-        <div className="product-info px-4 pt-4 pb-2">
-          <h3 className="product-name font-bold text-gray-900 border-b-none mb-1">{product.name}</h3>
-          <p className="product-desc text-xs text-gray-500 line-clamp-2 min-h-[32px]">{product.description}</p>
-          
-          <div className="flex items-end justify-between mt-4">
-             <div className="flex flex-col">
-               <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{hasVariants ? 'Base Price' : 'Today\'s Price'}</span>
-               <span className="font-black text-[#1a3d0c] text-xl leading-none">₹{product.price}</span>
-             </div>
-          </div>
-        </div>
+      <div className="product-img-wrap">
+        <img
+          src={product.img || product.imageUrl}
+          alt={product.name}
+          className="product-img"
+          loading="lazy"
+        />
       </div>
-      
-      <div className="px-4 pb-4 mt-auto">
+
+      <div className="product-info">
+        <h3 className="product-name">{product.name}</h3>
+        <p className="product-desc">{product.description}</p>
+        <p className="product-price">Price: ₹{product.price}/-</p>
         <button
-          className={`w-full py-3 rounded-xl font-bold transition-all shadow-sm flex items-center justify-center gap-2 ${adding ? 'bg-[#4a7c23] text-white' : 'bg-[#1a3d0c] hover:bg-[#2C7700] text-white hover:-translate-y-0.5 hover:shadow-md'} ${!product.inStock ? 'opacity-50 cursor-not-allowed' : ''}`}
+          className="btn-add-cart"
           onClick={handleAdd}
           disabled={!product.inStock || adding}
         >
-          {adding ? (
-            <>✓ <span className="text-sm">Added</span></>
-          ) : (
-            <><span className="text-lg leading-none">+</span> <span className="text-sm">Add to Cart</span></>
-          )}
+          {adding ? '✓ Added' : '+ Add to cart'}
         </button>
       </div>
     </div>
@@ -211,33 +233,18 @@ export default function AllProducts() {
       </div>
 
       {isMobile && (
-        <div className="mobile-filters">
-          <FilterDropdown
-            label="Category"
-            value={category}
-            options={CATEGORIES.map(c => ({ value: c === 'All' ? 'all' : c, label: c }))}
-            onChange={setCategory}
+        <>
+          <div className="mobile-meta">
+            <span>Online Customers: {Math.floor(Math.random() * 20) + 15}</span>
+            <span>{filteredProducts.length} Products</span>
+          </div>
+
+          <MobileFilters
+            category={category} setCategory={setCategory}
+            sortBy={sortBy} setSortBy={setSortBy}
+            availability={availability} setAvailability={setAvailability}
           />
-          <FilterDropdown
-            label="Sort By"
-            value={sortBy}
-            options={[
-              { value: 'default', label: 'Default' },
-              { value: 'price-asc', label: 'Price: Low' },
-              { value: 'price-desc', label: 'Price: High' },
-            ]}
-            onChange={setSortBy}
-          />
-          <FilterDropdown
-            label="Availability"
-            value={availability}
-            options={[
-              { value: 'all', label: 'All' },
-              { value: 'in-stock', label: 'In Stock' },
-            ]}
-            onChange={setAvailability}
-          />
-        </div>
+        </>
       )}
 
       <div className="products-layout">
@@ -251,10 +258,12 @@ export default function AllProducts() {
         )}
 
         <section className="products-section">
-          <div className="products-meta">
-            {/* <span className="online-customers">Online Customers: {Math.floor(Math.random() * 20) + 10}</span> */}
-            <span className="product-count">{filteredProducts.length} Products</span>
-          </div>
+          {!isMobile && (
+            <div className="products-meta">
+              <span className="online-customers">Online Customers: {Math.floor(Math.random() * 20) + 15}</span>
+              <span className="product-count">{filteredProducts.length} Products</span>
+            </div>
+          )}
 
           <div className="product-grid">
             {loading ? (
