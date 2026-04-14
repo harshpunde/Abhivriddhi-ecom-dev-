@@ -1,4 +1,4 @@
-import { HashRouter, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import React, { Suspense, lazy } from 'react';
 import { CartProvider, useCart } from './context/CartContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
@@ -107,7 +107,7 @@ function App() {
     <ErrorBoundary>
       <AuthProvider>
         <CartProvider>
-          <HashRouter>
+          <BrowserRouter>
             <ScrollToTop />
             <MainLayout>
               <Routes>
