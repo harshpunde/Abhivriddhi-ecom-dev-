@@ -53,7 +53,11 @@ const sendEmail = async ({ email, subject, html, attachments = [] }) => {
     console.log(`✅ Email sent to ${email} | messageId: ${info.messageId}`);
     return { success: true, messageId: info.messageId };
   } catch (err) {
-    console.error(`❌ FAILED to send email to ${email}:`, err.message);
+    console.error(`❌ [EMAIL] CRITICAL FAILURE sending to ${email}:`);
+    console.error(`   - Error Message: ${err.message}`);
+    console.error(`   - Error Code: ${err.code}`);
+    console.error(`   - Full Stack: ${err.stack}`);
+    console.error('   👉 ACTION: Please verify your Gmail App Password in Render Env Vars.');
     return { success: false, error: err.message };
   }
 };
